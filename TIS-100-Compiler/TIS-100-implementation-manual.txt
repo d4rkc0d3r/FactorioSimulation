@@ -1,0 +1,41 @@
+TIS-100 implementation details in factorio
+
+Special registers:
+
+  RW                   buffer for read and write operations to the ports
+
+Signals:
+  
+  1-3                  address for next instruction, the signal number represents how many extra ticks it waits
+  K                    address for next instruction, waits until read/write to port is complete
+  R                    adds ACC * R to ACC, mergeable
+  Q                    adds BAK * Q to BAK, mergeable
+  E                    adds RW * E to RW, mergeable
+  F                    adds ACC * F to RW, mergeable
+  G                    adds RW * G to ACC, mergeable
+  B                    adds ACC * B to BAK, mergeable
+  L                    adds BAK * L to ACC, mergeable
+  H                    adds ACC * RW * H to ACC, mergeable
+  I                    adds (ACC / RW) * H to ACC, mergeable
+  M                    adds ACC * M to ACC, mergeable
+  W                    adds ACC * ACC * W to ACC, takes 3 ticks
+  D                    adds ACC / D to ACC, mergeable
+  V                    adds V to ACC, mergeable
+  rocket-launcher = 1  jump to address ACC
+  pistol               jump to address if ACC = 0
+  smg                  jump to address if ACC > 0
+  shotgun              jump to address if ACC < 0
+  combat-shotgun       jump to address if ACC != 0
+  
+  J                    value to compare against on branches, takes 4 ticks to branch instead of 2
+  regular-magazine     jump to address if ACC = J
+  piercing-magazine    jump to address if ACC > J
+  shotgun-shell        jump to address if ACC < J
+  piercing-shell       jump to address if ACC != J
+  
+Internal Signals:
+
+  A                    address to load instruction
+  V                    value stored in ACC and BAK
+  C                    value stored in RW
+  

@@ -1,3 +1,20 @@
+*.suo
+*.sln
+*.pdb
+*.sdf
+*.csproj
+*.vcxproj
+*.user
+*/lib/*
+Debug/*
+Release/*
+x64/*
+*/bin/*
+*/obj/*
+*/Debug/*
+*/Release/*
+*/x64/*
+
 # Windows image file caches
 Thumbs.db
 ehthumbs.db
