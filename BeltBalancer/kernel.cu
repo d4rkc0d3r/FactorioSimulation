@@ -364,7 +364,6 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 		cout << "Min troughput with two belts: " << minTroughput << "%                          " << endl;
 	}
 
-	cout << endl;
 	delete[] workingCopy;
 }
 
@@ -379,7 +378,8 @@ int main(int argc, char** argv)
 
 	int iterations = -1;
 	string file = "DUMB_ASS";
-	int cudaDeviceId = 0;
+	int cudaDeviceId = -1;
+	bool doBenchmark = false;
 	bool timeIt = false;
 	bool optimize = false;
 
@@ -394,9 +394,13 @@ int main(int argc, char** argv)
 		{
 			optimize = true;
 		}
-		else if (arg.compare("-t") == 0)
+		else if (arg.compare("-t2") == 0)
 		{
 			testAllTwoBeltTroughputCombinations = true;
+		}
+		else if (arg.compare("-time") == 0)
+		{
+			timeIt = true;
 		}
 		else if (arg.compare("-cpu") == 0)
 		{
@@ -405,6 +409,10 @@ int main(int argc, char** argv)
 		else if (arg.compare("-gpu") == 0)
 		{
 			useCPU = false;
+			if (cudaDeviceId == -1)
+			{
+				cudaDeviceId = 0;
+			}
 		}
 		else if (arg.compare(0, 9, "-threads=") == 0)
 		{
@@ -414,7 +422,6 @@ int main(int argc, char** argv)
 		else if (arg.compare(0, 9, "-cudadev=") == 0)
 		{
 			cudaDeviceId = stoi(arg.substr(9));
-			useCPU = false;
 		}
 		else if (arg.compare(0, 3, "-i=") == 0)
 		{
@@ -422,7 +429,7 @@ int main(int argc, char** argv)
 		}
 		else if (arg.compare("-benchmark") == 0)
 		{
-			timeIt = true;
+			doBenchmark = true;
 		}
 		else if (arg.compare("-h") == 0 || arg.compare("-?"))
 		{
@@ -437,7 +444,7 @@ int main(int argc, char** argv)
 		return 0;
 	}
 
-	if (!useCPU)
+	if (cudaDeviceId != -1)
 	{
 		// Choose which GPU to run on
 		cudaStatus = cudaSetDevice(cudaDeviceId);
@@ -462,25 +469,33 @@ int main(int argc, char** argv)
 		return 1;
 	}
 
-	if (!timeIt)
+	clock_t start;
+	clock_t end;
+
+	start = clock();
+
+	if (!doBenchmark)
 	{
 		testBalance(belts, size, iterations);
 	}
 	else
 	{
-		clock_t start;
-		clock_t end;
-
-		start = clock();
-
 		updateEntities(belts, size, iterations);
-
-		end = clock();
-
-		double timeTaken = (end - start) / (double)CLOCKS_PER_SEC;
-
-		cout << "Simulating " << size << " belt parts for " << iterations << " iterations took " << timeTaken << " seconds." << endl << endl;
 	}
+
+	end = clock();
+
+	double timeTaken = (end - start) / (double)CLOCKS_PER_SEC;
+
+	if (doBenchmark)
+	{
+		cout << "Simulating " << size << " belt parts for " << iterations << " iterations took " << timeTaken << " seconds." << endl;
+	}
+	else if (timeIt)
+	{
+		cout << "Test took " << timeTaken << " seconds." << endl;
+	}
+	
 
 	delete[] belts;
 
