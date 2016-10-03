@@ -331,18 +331,18 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 		b.type = TYPE_BELT;
 		b.otherSplitterPart = -1;
 		b.next = -1;
-		b.maxTroughput = 1.0 / 3;
+		b.maxThroughput = 1.0 / 3;
 		b.buffer = 0;
 		b.addToBuffer = 0;
 		b.substractFromBuffer = 0;
 
 		if (e.name.find("fast") != string::npos)
 		{
-			b.maxTroughput = 2.0 / 3;
+			b.maxThroughput = 2.0 / 3;
 		}
 		else if (e.name.find("express") != string::npos)
 		{
-			b.maxTroughput = 1.0;
+			b.maxThroughput = 1.0;
 		}
 
 		beltIdMap[(int)round(e.x)][(int)round(e.y)] = i;
@@ -492,7 +492,7 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 				BeltEntity& o = output[i];
 				if (o.type == TYPE_LEFT_SPLITTER || o.type == TYPE_RIGHT_SPLITTER || o.type == TYPE_BELT || o.type == TYPE_SPAWN)
 				{
-					if (o.next != -1 && output[o.next].next != -1 && output[o.next].type == TYPE_BELT && o.maxTroughput == output[o.next].maxTroughput)
+					if (o.next != -1 && output[o.next].next != -1 && output[o.next].type == TYPE_BELT && o.maxThroughput == output[o.next].maxThroughput)
 					{
 						output[o.next].type = TYPE_PLS_DELETE;
 						o.next = output[o.next].next;
@@ -550,7 +550,7 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 	block.substractFromBuffer = 0;
 	block.next = -1;
 	block.otherSplitterPart = -1;
-	block.maxTroughput = 0;
+	block.maxThroughput = 0;
 	o[0] = block;
 
 	return o;

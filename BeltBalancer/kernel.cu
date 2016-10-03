@@ -43,8 +43,10 @@ void printAndMoveCursorBack(string str)
 bool useCPU = true;
 bool testInputBalance = true;
 bool testOuputBalance = true;
-bool testFullLoadTroughput = true;
-bool testAllTwoBeltTroughputCombinations = false;
+bool testFullLoadThroughput = true;
+bool testAllTwoBeltThroughputCombinations = false;
+bool testAllThroughputCombinationsGPU = false;
+bool testAllThroughputCombinationsCPU = false;
 int threads = 256;
 
 bool updateEntities(BeltEntity* entities, size_t size, unsigned int iterations)
@@ -84,7 +86,7 @@ void displayEntities(BeltEntity* entities, size_t size)
 #ifndef _DEBUG
 		if (t == '+' || t == '-')
 #endif
-			cout << "(" << t << ", " << entities[i].buffer << ", " << entities[i].lastTroughput << ", " << i - 1 << ", " << entities[i].next << ")" << endl;
+			cout << "(" << t << ", " << entities[i].buffer << ", " << entities[i].lastThroughput << ", " << i - 1 << ", " << entities[i].next << ")" << endl;
 	}
 	cout << endl;
 }
@@ -108,22 +110,22 @@ string loadBlueprintFile(string fileName)
 	return output;
 }
 
-struct IdTroughputHelper
+struct IdThroughputHelper
 {
 	int id;
-	float troughput;
+	float Throughput;
 };
 
 void testBalance(BeltEntity* entities, size_t size, int iterations)
 {
-	vector<IdTroughputHelper> spawnBelts;
-	vector<IdTroughputHelper> voidBelts;
+	vector<IdThroughputHelper> spawnBelts;
+	vector<IdThroughputHelper> voidBelts;
 
 	for (unsigned int i = 0; i < size; i++)
 	{
-		IdTroughputHelper t;
+		IdThroughputHelper t;
 		t.id = i;
-		t.troughput = entities[i].maxTroughput;
+		t.Throughput = entities[i].maxThroughput;
 		if (entities[i].type == TYPE_SPAWN)
 		{
 			spawnBelts.push_back(t);
@@ -141,7 +143,7 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 	if(testOuputBalance)
 	{
 		int passedInputs = 0;
-		int troughputLimitedInputs = 0;
+		int ThroughputLimitedInputs = 0;
 
 		for (unsigned int i = 0; i < spawnBelts.size(); i++)
 		{
@@ -153,18 +155,18 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 			{
 				if (i != j)
 				{
-					workingCopy[spawnBelts[j].id].maxTroughput = 0;
+					workingCopy[spawnBelts[j].id].maxThroughput = 0;
 				}
 			}
 
 			updateEntities(workingCopy, size, iterations);
 
-			float expectedResult = workingCopy[voidBelts[0].id].lastTroughput;
+			float expectedResult = workingCopy[voidBelts[0].id].lastThroughput;
 			int passedOutputs = 1;
 
 			for (unsigned int j = 1; j < voidBelts.size(); j++)
 			{
-				float v = workingCopy[voidBelts[j].id].lastTroughput;
+				float v = workingCopy[voidBelts[j].id].lastThroughput;
 				if (fabsf(expectedResult - v) / expectedResult < 0.001)
 				{
 					passedOutputs++;
@@ -177,9 +179,9 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 				}
 			}
 
-			if (workingCopy[spawnBelts[i].id].lastTroughput - workingCopy[spawnBelts[i].id].maxTroughput < -0.001)
+			if (workingCopy[spawnBelts[i].id].lastThroughput - workingCopy[spawnBelts[i].id].maxThroughput < -0.001)
 			{
-				troughputLimitedInputs++;
+				ThroughputLimitedInputs++;
 			}
 
 			if (passedOutputs == voidBelts.size())
@@ -189,9 +191,9 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 		}
 
 		cout << "Output balance: " << passedInputs << "/" << spawnBelts.size();
-		if (troughputLimitedInputs > 0)
+		if (ThroughputLimitedInputs > 0)
 		{
-			cout << "  (" << troughputLimitedInputs << " input" << ((troughputLimitedInputs == 1) ? " is" : "s are") << " troughput limited)" << endl;
+			cout << "  (" << ThroughputLimitedInputs << " input" << ((ThroughputLimitedInputs == 1) ? " is" : "s are") << " Throughput limited)" << endl;
 		}
 		else
 		{
@@ -202,7 +204,7 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 	if (testInputBalance)
 	{
 		int passedOutputs = 0;
-		int troughputLimitedOutputs = 0;
+		int ThroughputLimitedOutputs = 0;
 
 		for (unsigned int i = 0; i < voidBelts.size(); i++)
 		{
@@ -214,18 +216,18 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 			{
 				if (i != j)
 				{
-					workingCopy[voidBelts[j].id].maxTroughput = 0;
+					workingCopy[voidBelts[j].id].maxThroughput = 0;
 				}
 			}
 
 			updateEntities(workingCopy, size, iterations);
 
-			float expectedResult = workingCopy[spawnBelts[0].id].lastTroughput;
+			float expectedResult = workingCopy[spawnBelts[0].id].lastThroughput;
 			int passedInputs = 1;
 
 			for (unsigned int j = 1; j < spawnBelts.size(); j++)
 			{
-				float s = workingCopy[spawnBelts[j].id].lastTroughput;
+				float s = workingCopy[spawnBelts[j].id].lastThroughput;
 				if (fabsf(expectedResult - s) / expectedResult < 0.001)
 				{
 					passedInputs++;
@@ -238,9 +240,9 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 				}
 			}
 
-			if (workingCopy[voidBelts[i].id].lastTroughput - workingCopy[voidBelts[i].id].maxTroughput < -0.001)
+			if (workingCopy[voidBelts[i].id].lastThroughput - workingCopy[voidBelts[i].id].maxThroughput < -0.001)
 			{
-				troughputLimitedOutputs++;
+				ThroughputLimitedOutputs++;
 			}
 
 			if (passedInputs == spawnBelts.size())
@@ -250,9 +252,9 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 		}
 
 		cout << "Input balance: " << passedOutputs << "/" << voidBelts.size();
-		if (troughputLimitedOutputs > 0)
+		if (ThroughputLimitedOutputs > 0)
 		{
-			cout << "   (" << troughputLimitedOutputs << " output" << ((troughputLimitedOutputs == 1) ? " is" : "s are") << " troughput limited)" << endl;
+			cout << "   (" << ThroughputLimitedOutputs << " output" << ((ThroughputLimitedOutputs == 1) ? " is" : "s are") << " Throughput limited)" << endl;
 		}
 		else
 		{
@@ -260,7 +262,7 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 		}
 	}
 
-	if (testFullLoadTroughput)
+	if (testFullLoadThroughput)
 	{
 		memcpy(workingCopy, entities, size * sizeof(BeltEntity));
 
@@ -289,16 +291,16 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 		{
 			if (workingCopy[i].type == TYPE_VOID)
 			{
-				actualOutput += workingCopy[i].lastTroughput;
+				actualOutput += workingCopy[i].lastThroughput;
 			}
 		}
 
-		double troughputPercentage = ((int)(actualOutput / maxOutput * 1000)) / 10.0;
+		double ThroughputPercentage = ((int)(actualOutput / maxOutput * 1000)) / 10.0;
 
-		cout << "Troughput under full load: " << troughputPercentage << "%" << endl;
+		cout << "Throughput under full load: " << ThroughputPercentage << "%" << endl;
 	}
 
-	if (testAllTwoBeltTroughputCombinations)
+	if (testAllTwoBeltThroughputCombinations)
 	{
 		BeltEntity* allBlocked = new BeltEntity[size];
 		memcpy(allBlocked, entities, size * sizeof(BeltEntity));
@@ -311,7 +313,7 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 			allBlocked[voidBelts[i].id].voidAmount = 0;
 		}
 
-		double minTroughput = 100;
+		double minThroughput = 100;
 		int tested = 0;
 		double lastProgress = -1;
 		int toTest = ((spawnBelts.size() - 1) * (spawnBelts.size()) / 2) * ((voidBelts.size() - 1) * (voidBelts.size()) / 2);
@@ -324,44 +326,58 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 				if (progress != lastProgress)
 				{
 					stringstream ss;
-					ss << "Min troughput: " << minTroughput << "%  Progress: " << progress << ((progress - ((int)progress) == 0) ? ".0%   " : "%   ");
+					ss << "Min Throughput: " << minThroughput << "%  Progress: " << progress << ((progress - ((int)progress) == 0) ? ".0%   " : "%   ");
 					printAndMoveCursorBack(ss.str());
 					lastProgress = progress;
 				}
 
 				memcpy(workingCopy, allBlocked, size * sizeof(BeltEntity));
-				workingCopy[spawnBelts[i1].id].spawnAmount = spawnBelts[i1].troughput;
-				workingCopy[spawnBelts[i2].id].spawnAmount = spawnBelts[i2].troughput;
-				workingCopy[voidBelts[o1].id].voidAmount = voidBelts[o1].troughput;
-				workingCopy[voidBelts[o2].id].voidAmount = voidBelts[o2].troughput;
+				workingCopy[spawnBelts[i1].id].spawnAmount = spawnBelts[i1].Throughput;
+				workingCopy[spawnBelts[i2].id].spawnAmount = spawnBelts[i2].Throughput;
+				workingCopy[voidBelts[o1].id].voidAmount = voidBelts[o1].Throughput;
+				workingCopy[voidBelts[o2].id].voidAmount = voidBelts[o2].Throughput;
 
 				updateEntities(workingCopy, size, iterations);
 
 				double maxInput = 0;
 				double maxOutput = 0;
 
-				maxInput += spawnBelts[i1].troughput;
-				maxInput += spawnBelts[i2].troughput;
-				maxOutput += voidBelts[o1].troughput;
-				maxOutput += voidBelts[o2].troughput;
+				maxInput += spawnBelts[i1].Throughput;
+				maxInput += spawnBelts[i2].Throughput;
+				maxOutput += voidBelts[o1].Throughput;
+				maxOutput += voidBelts[o2].Throughput;
 
 				maxOutput = min(maxInput, maxOutput);
 
 				double actualOutput = 0;
 
-				actualOutput += workingCopy[voidBelts[o1].id].lastTroughput;
-				actualOutput += workingCopy[voidBelts[o2].id].lastTroughput;
+				actualOutput += workingCopy[voidBelts[o1].id].lastThroughput;
+				actualOutput += workingCopy[voidBelts[o2].id].lastThroughput;
 
-				double troughputPercentage = ((int)(actualOutput / maxOutput * 1000)) / 10.0;
+				double ThroughputPercentage = ((int)(actualOutput / maxOutput * 1000)) / 10.0;
 
-				if (troughputPercentage < minTroughput)
+				if (ThroughputPercentage < minThroughput)
 				{
-					minTroughput = troughputPercentage;
+					minThroughput = ThroughputPercentage;
 				}
 			}
 		}
 
-		cout << "Min troughput with two belts: " << minTroughput << "%                          " << endl;
+		cout << "Min Throughput with two belts: " << minThroughput << "%                          " << endl;
+	}
+
+	if (testAllThroughputCombinationsCPU)
+	{
+		double minThroughput = floor(testThroughputCombinationsOnCPU(entities, size, iterations, 2, 8) * 1000) / 10;
+
+		cout << "Min Throughput with all combinations: " << minThroughput << "%" << endl;
+	}
+
+	if (testAllThroughputCombinationsGPU)
+	{
+		double minThroughput = floor(testThroughputCombinationsOnGPU(entities, size, iterations, 2, 8) * 1000) / 10;
+
+		cout << "Min Throughput with all combinations: " << minThroughput << "%" << endl;
 	}
 
 	delete[] workingCopy;
@@ -396,7 +412,15 @@ int main(int argc, char** argv)
 		}
 		else if (arg.compare("-t2") == 0)
 		{
-			testAllTwoBeltTroughputCombinations = true;
+			testAllTwoBeltThroughputCombinations = true;
+		}
+		else if (arg.compare("-tallcpu") == 0)
+		{
+			testAllThroughputCombinationsCPU = true;
+		}
+		else if (arg.compare("-tallgpu") == 0)
+		{
+			testAllThroughputCombinationsGPU = true;
 		}
 		else if (arg.compare("-time") == 0)
 		{
