@@ -16,11 +16,20 @@ Signals:
   B                    adds ACC * B to BAK, mergeable
   L                    adds BAK * L to ACC, mergeable
   H                    adds ACC * RW * H to ACC, mergeable
-  I                    adds (ACC / RW) * H to ACC, mergeable
+  I                    adds (ACC / RW) * I to ACC, mergeable
   M                    adds ACC * M to ACC, mergeable
   W                    adds ACC * ACC * W to ACC, takes 3 ticks
   D                    adds ACC / D to ACC, mergeable
   V                    adds V to ACC, mergeable
+  S                    adds S to RW, mergeable
+  U = 1                adds UP to RW
+  N = 1                adds LEFT to RW
+  O = 1                adds RIGHT to RW
+  P = 1                adds DOWN to RW
+  T = 1                write RW to LEFT
+  X = 1                write RW to UP
+  Y = 1                write RW to RIGHT
+  Z = 1                write RW to DOWN
   rocket-launcher = 1  jump to address ACC
   pistol               jump to address if ACC = 0
   smg                  jump to address if ACC > 0
