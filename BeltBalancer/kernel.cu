@@ -41,6 +41,7 @@ void printAndMoveCursorBack(string str)
 #endif
 
 bool useCPU = true;
+bool printProgress = true;
 bool testInputBalance = true;
 bool testOuputBalance = true;
 bool testFullLoadThroughput = true;
@@ -147,7 +148,10 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 
 		for (unsigned int i = 0; i < spawnBelts.size(); i++)
 		{
-			printAndMoveCursorBack("Progress: " + to_string(passedInputs) + "(" + to_string(i) + ") / " + to_string(spawnBelts.size()));
+			if (printProgress)
+			{
+				printAndMoveCursorBack("Progress: " + to_string(passedInputs) + "(" + to_string(i) + ") / " + to_string(spawnBelts.size()));
+			}
 
 			memcpy(workingCopy, entities, size * sizeof(BeltEntity));
 
@@ -195,9 +199,13 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 		{
 			cout << "  (" << ThroughputLimitedInputs << " input" << ((ThroughputLimitedInputs == 1) ? " is" : "s are") << " Throughput limited)" << endl;
 		}
-		else
+		else if (printProgress)
 		{
 			cout << "              " << endl;
+		}
+		else
+		{
+			cout << endl;
 		}
 	}
 
@@ -208,7 +216,10 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 
 		for (unsigned int i = 0; i < voidBelts.size(); i++)
 		{
-			printAndMoveCursorBack("Progress: " + to_string(passedOutputs) + "(" + to_string(i) + ") / " + to_string(voidBelts.size()));
+			if (printProgress)
+			{
+				printAndMoveCursorBack("Progress: " + to_string(passedOutputs) + "(" + to_string(i) + ") / " + to_string(voidBelts.size()));
+			}
 
 			memcpy(workingCopy, entities, size * sizeof(BeltEntity));
 
@@ -256,9 +267,13 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 		{
 			cout << "   (" << ThroughputLimitedOutputs << " output" << ((ThroughputLimitedOutputs == 1) ? " is" : "s are") << " Throughput limited)" << endl;
 		}
-		else
+		else if (printProgress)
 		{
 			cout << "              " << endl;
+		}
+		else
+		{
+			cout << endl;
 		}
 	}
 
@@ -322,13 +337,16 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 		{
 			for (unsigned int o1 = 0; o1 < voidBelts.size() - 1; o1++) for (unsigned int o2 = o1 + 1; o2 < voidBelts.size(); o2++)
 			{
-				double progress = ((int)((tested++ / (double)toTest) * 1000)) / 10.0;
-				if (progress != lastProgress)
+				if (printProgress)
 				{
-					stringstream ss;
-					ss << "Min Throughput: " << minThroughput << "%  Progress: " << progress << ((progress - ((int)progress) == 0) ? ".0%   " : "%   ");
-					printAndMoveCursorBack(ss.str());
-					lastProgress = progress;
+					double progress = ((int)((tested++ / (double)toTest) * 1000)) / 10.0;
+					if (progress != lastProgress)
+					{
+						stringstream ss;
+						ss << "Min Throughput: " << minThroughput << "%  Progress: " << progress << ((progress - ((int)progress) == 0) ? ".0%   " : "%   ");
+						printAndMoveCursorBack(ss.str());
+						lastProgress = progress;
+					}
 				}
 
 				memcpy(workingCopy, allBlocked, size * sizeof(BeltEntity));
@@ -363,19 +381,19 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 			}
 		}
 
-		cout << "Min Throughput with two belts: " << minThroughput << "%                          " << endl;
+		cout << "Min Throughput with two belts: " << minThroughput << ((printProgress) ? "%                          " : "%") << endl;
 	}
 
 	if (testAllThroughputCombinationsCPU)
 	{
-		double minThroughput = floor(testThroughputCombinationsOnCPU(entities, size, iterations, 2, 8) * 1000) / 10;
+		double minThroughput = floor(testThroughputCombinationsOnCPU(entities, size, iterations, 2, 12) * 1000) / 10;
 
 		cout << "Min Throughput with all combinations: " << minThroughput << "%" << endl;
 	}
 
 	if (testAllThroughputCombinationsGPU)
 	{
-		double minThroughput = floor(testThroughputCombinationsOnGPU(entities, size, iterations, 2, 8) * 1000) / 10;
+		double minThroughput = floor(testThroughputCombinationsOnGPU(entities, size, iterations, 2, 12) * 1000) / 10;
 
 		cout << "Min Throughput with all combinations: " << minThroughput << "%" << endl;
 	}
@@ -385,7 +403,22 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 
 void printHelp()
 {
-	cout << "beltbalancer.exe -f=YOUR_BALANCER_FILE.txt ([-cpu]|[-gpu]|[-cudadev=N]) [-t] [-i=N] [-benchmark] [-o]" << endl;
+	cout << "beltbalancer.exe -f=YOUR_BALANCER_FILE.txt ([-cpu]|[-gpu]|[-cudadev=N]) [-t2]" << endl;
+	cout << "                 [-tall(cpu|gpu)] [-i=N] [-benchmark] [-time] [-s]" << endl;
+	cout << "             " << endl;
+	cout << "  -f=FILE    loads the blueprint string file FILE, if not found tries again" << endl;
+	cout << "             with %APPDATA%\\factorio\\script-output\\blueprint-string\\FILE" << endl;
+	cout << "  -t2        tests all throughput combinations where exactly two inputs and" << endl;
+	cout << "             outputs are used" << endl;
+	cout << "  -tall      tests all throughput combinations where more or equal to two" << endl;
+	cout << "             inputs and outputs are used" << endl;
+	cout << "  -i=N       specifies the number of iterations the simulation should run" << endl;
+	cout << "             default is 2 * (2 * nSplitter + nInputs + nOutputs + 1)" << endl;
+	cout << "  -time      times the complete testing time needed" << endl;
+	cout << "  -s         does suppress the ongoing progress display" << endl;
+	cout << "             useful if you pipe the output to a file" << endl;
+	cout << "  -benchmark times only the simulation time needed to run the specified amount" << endl;
+	cout << "             of iterations" << endl;
 }
 
 int main(int argc, char** argv)
@@ -397,7 +430,7 @@ int main(int argc, char** argv)
 	int cudaDeviceId = -1;
 	bool doBenchmark = false;
 	bool timeIt = false;
-	bool optimize = false;
+	bool optimize = true;
 
 	for (int i = 1; i < argc; i++)
 	{
@@ -406,9 +439,13 @@ int main(int argc, char** argv)
 		{
 			file = arg.substr(3, arg.length() - 3);
 		}
-		else if (arg.compare("-o") == 0)
+		else if (arg.compare("-no") == 0)
 		{
-			optimize = true;
+			optimize = false;
+		}
+		else if (arg.compare("-s") == 0)
+		{
+			printProgress = false;
 		}
 		else if (arg.compare("-t2") == 0)
 		{
@@ -479,12 +516,19 @@ int main(int argc, char** argv)
 		}
 	}
 
+	string fileContent = loadBlueprintFile(file);
+	if (fileContent.empty())
+	{
+		cerr << "File not found" << endl;
+		return 1;
+	}
+
 	size_t size = 0;
-	BeltEntity* belts = parseBlueprintString(loadBlueprintFile(file), &size, optimize);
+	BeltEntity* belts = parseBlueprintString(fileContent, &size, optimize);
 
 	if (iterations == -1)
 	{
-		iterations = size * 5;
+		iterations = size * 2;
 	}
 
 	if (size == 0)
