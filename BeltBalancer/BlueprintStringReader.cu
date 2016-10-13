@@ -334,7 +334,7 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 		b.maxThroughput = 1.0 / 3;
 		b.buffer = 0;
 		b.addToBuffer = 0;
-		b.substractFromBuffer = 0;
+		b.subtractFromBuffer = 0;
 
 		if (e.name.find("fast") != string::npos)
 		{
@@ -547,7 +547,7 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 	block.type = TYPE_BLOCK;
 	block.buffer = 0;
 	block.addToBuffer = 0;
-	block.substractFromBuffer = 0;
+	block.subtractFromBuffer = 0;
 	block.next = -1;
 	block.otherSplitterPart = -1;
 	block.maxThroughput = 0;

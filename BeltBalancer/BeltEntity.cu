@@ -29,10 +29,10 @@ __device__ inline void updatePass1(BeltEntity* entities, int i)
 		{
 			next->addToBuffer = next->maxThroughput * 2 - next->buffer;
 		}
-		b->substractFromBuffer = next->addToBuffer;
+		b->subtractFromBuffer = next->addToBuffer;
 		break;
 	case TYPE_VOID:
-		b->substractFromBuffer = MIN(b->buffer, b->voidAmount);
+		b->subtractFromBuffer = MIN(b->buffer, b->voidAmount);
 		break;
 	case TYPE_LEFT_SPLITTER:
 		BeltEntity* r = entities + b->otherSplitterPart;
@@ -66,8 +66,8 @@ __device__ inline void updatePass1(BeltEntity* entities, int i)
 				lnext->addToBuffer = halfSupply;
 				rnext->addToBuffer = halfSupply;
 			}
-			b->substractFromBuffer = lsupply;
-			r->substractFromBuffer = rsupply;
+			b->subtractFromBuffer = lsupply;
+			r->subtractFromBuffer = rsupply;
 		}
 		else
 		{
@@ -76,18 +76,18 @@ __device__ inline void updatePass1(BeltEntity* entities, int i)
 			rnext->addToBuffer = rdemand;
 			if (lsupply < halfDemand)
 			{
-				b->substractFromBuffer = lsupply;
-				r->substractFromBuffer = demand - lsupply;
+				b->subtractFromBuffer = lsupply;
+				r->subtractFromBuffer = demand - lsupply;
 			}
 			else if (rsupply < halfDemand)
 			{
-				r->substractFromBuffer = rsupply;
-				b->substractFromBuffer = demand - rsupply;
+				r->subtractFromBuffer = rsupply;
+				b->subtractFromBuffer = demand - rsupply;
 			}
 			else
 			{
-				r->substractFromBuffer = halfDemand;
-				b->substractFromBuffer = halfDemand;
+				r->subtractFromBuffer = halfDemand;
+				b->subtractFromBuffer = halfDemand;
 			}
 		}
 		break;
@@ -102,7 +102,7 @@ __device__ inline void updatePass2(BeltEntity* entities, int i)
 {
 	BeltEntity* b = entities + i;
 
-	b->buffer += b->addToBuffer - b->substractFromBuffer;
+	b->buffer += b->addToBuffer - b->subtractFromBuffer;
 }
 
 __global__ void updateKernel(BeltEntity* entities)
@@ -459,7 +459,7 @@ bool updateOnGPU(BeltEntity* entities, size_t size, unsigned int iterations, int
 		b.maxThroughput = 0;
 		b.addToBuffer = 0;
 		b.buffer = 0;
-		b.substractFromBuffer = 0;
+		b.subtractFromBuffer = 0;
 		b.next = -1;
 		b.otherSplitterPart = -1;
 		paddingBlocks[i] = b;
@@ -527,10 +527,10 @@ bool updateOnCPU(BeltEntity* entities, size_t size, unsigned int iterations)
 				{
 					next->addToBuffer = next->maxThroughput * 2 - next->buffer;
 				}
-				b->substractFromBuffer = next->addToBuffer;
+				b->subtractFromBuffer = next->addToBuffer;
 				break;
 			case TYPE_VOID:
-				b->substractFromBuffer = MIN(b->buffer, b->voidAmount);
+				b->subtractFromBuffer = MIN(b->buffer, b->voidAmount);
 				break;
 			case TYPE_LEFT_SPLITTER:
 				r = entities + b->otherSplitterPart + 1;
@@ -564,8 +564,8 @@ bool updateOnCPU(BeltEntity* entities, size_t size, unsigned int iterations)
 						lnext->addToBuffer = halfSupply;
 						rnext->addToBuffer = halfSupply;
 					}
-					b->substractFromBuffer = lsupply;
-					r->substractFromBuffer = rsupply;
+					b->subtractFromBuffer = lsupply;
+					r->subtractFromBuffer = rsupply;
 				}
 				else
 				{
@@ -574,18 +574,18 @@ bool updateOnCPU(BeltEntity* entities, size_t size, unsigned int iterations)
 					rnext->addToBuffer = rdemand;
 					if (lsupply < halfDemand)
 					{
-						b->substractFromBuffer = lsupply;
-						r->substractFromBuffer = demand - lsupply;
+						b->subtractFromBuffer = lsupply;
+						r->subtractFromBuffer = demand - lsupply;
 					}
 					else if (rsupply < halfDemand)
 					{
-						r->substractFromBuffer = rsupply;
-						b->substractFromBuffer = demand - rsupply;
+						r->subtractFromBuffer = rsupply;
+						b->subtractFromBuffer = demand - rsupply;
 					}
 					else
 					{
-						r->substractFromBuffer = halfDemand;
-						b->substractFromBuffer = halfDemand;
+						r->subtractFromBuffer = halfDemand;
+						b->subtractFromBuffer = halfDemand;
 					}
 				}
 				break;
@@ -598,7 +598,7 @@ bool updateOnCPU(BeltEntity* entities, size_t size, unsigned int iterations)
 		for (int i = 1; i < size; i++)
 		{
 			BeltEntity* b = entities + i;
-			b->buffer += b->addToBuffer - b->substractFromBuffer;
+			b->buffer += b->addToBuffer - b->subtractFromBuffer;
 		}
 	}
 

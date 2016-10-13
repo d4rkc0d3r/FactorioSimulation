@@ -20,7 +20,7 @@ struct BeltEntity
 	float buffer;
 	float addToBuffer;
 	union{
-		float substractFromBuffer;
+		float subtractFromBuffer;
 		float lastThroughput;
 	};
 	union {
