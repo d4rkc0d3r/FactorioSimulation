@@ -1,6 +1,7 @@
 #include "BeltEntity.cuh"
 #include <vector>
 #include <iostream>
+#include <thread>
 
 #define MIN(x, y) ((x) < (y) ? x : y)
 
@@ -335,11 +336,64 @@ double testThroughputCombinationsOnGPU(BeltEntity* entities, size_t size, unsign
 	return minimum;
 }
 
-double testThroughputCombinationsOnCPU(BeltEntity* entities, size_t size, unsigned int iterations, int minPopCount, int maxPopCount)
+void testThroughput(BeltEntity* source, size_t size, unsigned int iterations, vector<int>& inputIds, vector<int>& outputIds,
+					  int startIndex, int endIndex, vector<float>& inputData, vector<float>& outputData, float* results)
+{
+	BeltEntity* entities = new BeltEntity[size];
+
+	for (int index = startIndex; index < endIndex; index++)
+	{
+		memcpy(entities, source, size * sizeof(BeltEntity));
+
+		int inputDataSize = inputData.size() / inputIds.size();
+		
+		int inputOffset = (index % inputDataSize) * inputIds.size();
+		int outputOffset = (index / inputDataSize) * outputIds.size();
+
+		for (int i = 0; i < inputIds.size(); i++)
+		{
+			entities[inputIds[i]].maxThroughput *= inputData[inputOffset + i];
+		}
+
+		for (int i = 0; i < outputIds.size(); i++)
+		{
+			entities[outputIds[i]].maxThroughput *= outputData[outputOffset + i];
+		}
+
+		updateOnCPU(entities, size, iterations);
+
+		float maxInput = 0;
+		float maxOutput = 0;
+
+		for (int i = 0; i < inputIds.size(); i++)
+		{
+			maxInput += entities[inputIds[i]].maxThroughput;
+		}
+
+		for (int i = 0; i < outputIds.size(); i++)
+		{
+			maxOutput += entities[outputIds[i]].maxThroughput;
+		}
+
+		maxOutput = MIN(maxInput, maxOutput);
+
+		float actualOutput = 0;
+
+		for (int i = 0; i < outputIds.size(); i++)
+		{
+			actualOutput += entities[outputIds[i]].lastThroughput;
+		}
+
+		results[index] = actualOutput / maxOutput;
+	}
+
+	delete [] entities;
+}
+
+double testThroughputCombinationsOnCPU(BeltEntity* entities, size_t size, unsigned int iterations, int minPopCount, int maxPopCount, int threadCount)
 {
 	vector<int> inputIds;
 	vector<int> outputIds;
-
 	for (int i = 0; i < size; i++)
 	{
 		if (entities[i].type == TYPE_SPAWN)
@@ -351,11 +405,26 @@ double testThroughputCombinationsOnCPU(BeltEntity* entities, size_t size, unsign
 			outputIds.push_back(i);
 		}
 	}
-
+	
 	int inputBeltCount = inputIds.size();
 	int outputBeltCount = outputIds.size();
 
-	BeltEntity* workingCopy = (BeltEntity*)malloc(sizeof(BeltEntity)*size);
+	vector<float> inputCombinations;
+	for (int in = 0; in < (1 << inputBeltCount); in++)
+	{
+		int popCount = countSetBits(in);
+		if (popCount < minPopCount || popCount > maxPopCount)
+		{
+			continue;
+		}
+		int inCopy = in;
+		for (int i = 0; i < inputBeltCount; i++)
+		{
+			inputCombinations.push_back((float)(inCopy & 1));
+			inCopy = inCopy >> 1;
+		}
+	}
+	int inputCombinationsSize = inputCombinations.size() / inputBeltCount;
 
 	vector<float> outputCombinations;
 	for (int out = 0; out < (1 << outputBeltCount); out++)
@@ -374,70 +443,50 @@ double testThroughputCombinationsOnCPU(BeltEntity* entities, size_t size, unsign
 	}
 	int outputCombinationsSize = outputCombinations.size() / outputBeltCount;
 
-	float minimum = 1;
-
-	float* inputData = new float[inputBeltCount];
-	for (int in = 0; in < (1 << inputBeltCount); in++)
+	int testCases = outputCombinationsSize * inputCombinationsSize;
+	
+	vector<float> result(testCases, 69.0f);
+	
+	threadCount = MIN(threadCount, result.size());
+	
+	if (threadCount <= 1)
 	{
-		int popCount = countSetBits(in);
-		if (popCount < minPopCount || popCount > maxPopCount)
+		testThroughput(entities, size, iterations, inputIds, outputIds, 0, result.size(), inputCombinations, outputCombinations, &result[0]);
+	}
+	else
+	{
+		thread** threads = new thread*[threadCount];
+		
+		for (int i = 0; i < threadCount; i++)
 		{
-			continue;
+			int startIndex = (result.size() / threadCount) * i;
+			int endIndex = (result.size() / threadCount) * (i + 1);
+			if (i == threadCount - 1)
+			{
+				endIndex = result.size();
+			}
+			threads[i] = new thread(testThroughput, entities, size, iterations, inputIds, outputIds, startIndex, endIndex, inputCombinations, outputCombinations, &result[0]);
 		}
-		int inCopy = in;
-		for (int i = 0; i < inputBeltCount; i++)
+		
+		for (int i = 0; i < threadCount; i++)
 		{
-			inputData[i] = (float)(inCopy & 1);
-			inCopy = inCopy >> 1;
+			threads[i]->join();
+			delete threads[i];
 		}
-		for (int out = 0; out < outputCombinationsSize; out++)
-		{
-			memcpy(workingCopy, entities, size * sizeof(BeltEntity));
-
-			for (int i = 0; i < inputBeltCount; i++)
-			{
-				workingCopy[inputIds[i]].maxThroughput *= inputData[i];
-			}
-			for (int i = 0; i < outputBeltCount; i++)
-			{
-				workingCopy[outputIds[i]].maxThroughput *= outputCombinations[out * outputBeltCount + i];
-			}
-
-			updateOnCPU(workingCopy, size, iterations);
-
-			float maxInput = 0;
-			float maxOutput = 0;
-
-			for (int i = 0; i < inputBeltCount; i++)
-			{
-				maxInput += workingCopy[inputIds[i]].maxThroughput;
-			}
-
-			for (int i = 0; i < outputBeltCount; i++)
-			{
-				maxOutput += workingCopy[outputIds[i]].maxThroughput;
-			}
-
-			maxOutput = MIN(maxInput, maxOutput);
-
-			float actualOutput = 0;
-
-			for (int i = 0; i < outputBeltCount; i++)
-			{
-				actualOutput += workingCopy[outputIds[i]].lastThroughput;
-			}
-
-			float percent = actualOutput / maxOutput;
-
-			if (percent < minimum)
-			{
-				minimum = percent;
-			}
-		}
+		
+		delete[] threads;
 	}
 
-	free(workingCopy);
-
+	double minimum = 69;
+	
+	for (int i = 0; i < result.size(); i++)
+	{
+		if (result[i] < minimum)
+		{
+			minimum = result[i];
+		}
+	}
+	
 	return minimum;
 }
 

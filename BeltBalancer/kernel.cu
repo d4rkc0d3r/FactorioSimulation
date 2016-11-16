@@ -13,6 +13,7 @@
 #include <sstream>
 #include <vector>
 #include <time.h>
+#include <regex>
 
 using namespace std;
 
@@ -49,6 +50,7 @@ bool testAllTwoBeltThroughputCombinations = false;
 bool testAllThroughputCombinationsGPU = false;
 bool testAllThroughputCombinationsCPU = false;
 int threads = 256;
+int cpuThreads = 1;
 
 bool updateEntities(BeltEntity* entities, size_t size, unsigned int iterations)
 {
@@ -386,7 +388,7 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 
 	if (testAllThroughputCombinationsCPU)
 	{
-		double minThroughput = floor(testThroughputCombinationsOnCPU(entities, size, iterations, 2, 12) * 1000) / 10;
+		double minThroughput = floor(testThroughputCombinationsOnCPU(entities, size, iterations, 2, 12, cpuThreads) * 1000) / 10;
 
 		cout << "Min Throughput with all combinations: " << minThroughput << "%" << endl;
 	}
@@ -451,9 +453,13 @@ int main(int argc, char** argv)
 		{
 			testAllTwoBeltThroughputCombinations = true;
 		}
-		else if (arg.compare("-tallcpu") == 0)
+		else if (regex_match(arg, regex("-tallcpu(\\d*)")))
 		{
 			testAllThroughputCombinationsCPU = true;
+			if (arg.length() > 8)
+			{
+				cpuThreads = stoi(arg.substr(8));
+			}
 		}
 		else if (arg.compare("-tallgpu") == 0)
 		{

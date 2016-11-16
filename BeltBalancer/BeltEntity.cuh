@@ -34,7 +34,7 @@ struct BeltEntity
 
 // result is minimum throughput
 double testThroughputCombinationsOnGPU(BeltEntity* entities, size_t size, unsigned int iterations, int minPopCount, int maxPopCount);
-double testThroughputCombinationsOnCPU(BeltEntity* entities, size_t size, unsigned int iterations, int minPopCount, int maxPopCount);
+double testThroughputCombinationsOnCPU(BeltEntity* entities, size_t size, unsigned int iterations, int minPopCount, int maxPopCount, int threads = 4);
 
 bool updateOnGPU(BeltEntity* entities, size_t size, unsigned int iterations, int threads);
 bool updateOnCPU(BeltEntity* entities, size_t size, unsigned int iterations);
