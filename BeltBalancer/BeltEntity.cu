@@ -336,6 +336,8 @@ double testThroughputCombinationsOnGPU(BeltEntity* entities, size_t size, unsign
 	return minimum;
 }
 
+int updateEntities(BeltEntity* entities, size_t size, unsigned int iterations);
+
 void testThroughput(BeltEntity* source, size_t size, unsigned int iterations, vector<int>& inputIds, vector<int>& outputIds,
 					  int startIndex, int endIndex, vector<float>& inputData, vector<float>& outputData, float* results)
 {
@@ -360,7 +362,7 @@ void testThroughput(BeltEntity* source, size_t size, unsigned int iterations, ve
 			entities[outputIds[i]].maxThroughput *= outputData[outputOffset + i];
 		}
 
-		updateOnCPU(entities, size, iterations);
+		updateEntities(entities, size, iterations);
 
 		float maxInput = 0;
 		float maxOutput = 0;
@@ -490,7 +492,7 @@ double testThroughputCombinationsOnCPU(BeltEntity* entities, size_t size, unsign
 	return minimum;
 }
 
-bool updateOnGPU(BeltEntity* entities, size_t size, unsigned int iterations, int threads)
+int updateOnGPU(BeltEntity* entities, size_t size, unsigned int iterations, int threads)
 {
 	BeltEntity* dev_entities = 0;
 	cudaError_t cudaStatus;
@@ -542,10 +544,10 @@ bool updateOnGPU(BeltEntity* entities, size_t size, unsigned int iterations, int
 Error:
 	cudaFree(dev_entities);
 
-	return cudaStatus == cudaSuccess;
+	return (cudaStatus == cudaSuccess) ? iterations : 0;
 }
 
-bool updateOnCPU(BeltEntity* entities, size_t size, unsigned int iterations)
+int updateOnCPU(BeltEntity* entities, size_t size, unsigned int iterations)
 {
 	for (unsigned int j = 0; j < iterations; j++)
 	{
@@ -651,5 +653,47 @@ bool updateOnCPU(BeltEntity* entities, size_t size, unsigned int iterations)
 		}
 	}
 
-	return true;
+	return iterations;
+}
+
+int updateOnCPU(BeltEntity* entities, size_t size, unsigned int iterations, double throughputThresholdToFinish)
+{
+	vector<BeltEntity*> spawnBelts;
+	vector<BeltEntity*> voidBelts;
+
+	int iterationCount = 0;
+
+	for (int i = 0; i < size; i++)
+	{
+		if (entities[i].type == TYPE_SPAWN)
+		{
+			spawnBelts.push_back(entities + i);
+		}
+		else if (entities[i].type == TYPE_VOID)
+		{
+			voidBelts.push_back(entities + i);
+		}
+	}
+
+	double troughputDifference = spawnBelts.size();
+
+	do
+	{
+		updateOnCPU(entities, size, iterations);
+
+		iterationCount += iterations;
+		troughputDifference = 0;
+
+		for (int i = 0; i < spawnBelts.size(); i++)
+		{
+			troughputDifference += spawnBelts[i]->lastThroughput;
+		}
+		for (int i = 0; i < voidBelts.size(); i++)
+		{
+			troughputDifference -= voidBelts[i]->lastThroughput;
+		}
+	}
+	while (abs(troughputDifference) > throughputThresholdToFinish);
+
+	return iterationCount;
 }

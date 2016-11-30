@@ -43,6 +43,7 @@ void printAndMoveCursorBack(string str)
 
 bool useCPU = true;
 bool printProgress = true;
+bool adaptiveIterationCount = false;
 bool testInputBalance = true;
 bool testOuputBalance = true;
 bool testFullLoadThroughput = true;
@@ -52,9 +53,30 @@ bool testAllThroughputCombinationsCPU = false;
 int threads = 256;
 int cpuThreads = 1;
 
-bool updateEntities(BeltEntity* entities, size_t size, unsigned int iterations)
+int minIterations = 1 << 30;
+int maxIterations = 0;
+
+int updateEntities(BeltEntity* entities, size_t size, unsigned int iterations)
 {
-	return useCPU ? updateOnCPU(entities, size, iterations) : updateOnGPU(entities, size, iterations, threads);
+	int iter;
+	if (useCPU)
+	{
+		if (adaptiveIterationCount)
+		{
+			iter = updateOnCPU(entities, size, iterations, 0.0001);
+		}
+		else
+		{
+			iter = updateOnCPU(entities, size, iterations);
+		}
+	}
+	else
+	{
+		iter = updateOnGPU(entities, size, iterations, threads);
+	}
+	minIterations = min(minIterations, iter);
+	maxIterations = max(maxIterations, iter);
+	return iter;
 }
 
 void displayEntities(BeltEntity* entities, size_t size)
@@ -498,7 +520,11 @@ int main(int argc, char** argv)
 		{
 			doBenchmark = true;
 		}
-		else if (arg.compare("-h") == 0 || arg.compare("-?"))
+		else if (arg.compare("-a") == 0)
+		{
+			adaptiveIterationCount = true;
+		}
+		else if (arg.compare("-h") == 0 || arg.compare("-?") == 0)
 		{
 			printHelp();
 			return 0;
@@ -534,8 +560,16 @@ int main(int argc, char** argv)
 
 	if (iterations == -1)
 	{
-		iterations = size * 2;
+		if (adaptiveIterationCount)
+		{
+			iterations = 5;
+		}
+		else
+		{
+			iterations = size * 2;
+		}
 	}
+	
 
 	if (size == 0)
 	{
@@ -568,6 +602,7 @@ int main(int argc, char** argv)
 	else if (timeIt)
 	{
 		cout << "Test took " << timeTaken << " seconds." << endl;
+		cout << "Iteration result: " << minIterations << " | " << maxIterations << endl;
 	}
 	
 
