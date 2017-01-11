@@ -161,8 +161,6 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 		}
 	}
 
-	cout << "Testing a " << spawnBelts.size() << " to " << voidBelts.size() << " balancer" << endl;
-
 	BeltEntity* workingCopy = new BeltEntity[size];
 
 	if(testOuputBalance)

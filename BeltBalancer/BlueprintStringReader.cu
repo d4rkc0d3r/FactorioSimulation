@@ -468,6 +468,41 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 		}
 	}
 
+	// find dimensions without counting spawn and void belts
+	{
+		int minx = width;
+		int miny = height;
+		int maxx = 0;
+		int maxy = 0;
+		int inputBeltCount = 0;
+		int outputBeltCount = 0;
+		for (int x = 0; x < width; x++)
+		{
+			for (int y = 0; y < height; y++)
+			{
+				if (beltIdMap[x][y] == -1)
+				{
+					continue;
+				}
+				if (output[beltIdMap[x][y]].type == TYPE_SPAWN)
+				{
+					inputBeltCount++;
+					continue;
+				}
+				if (output[beltIdMap[x][y]].type == TYPE_VOID)
+				{
+					outputBeltCount++;
+					continue;
+				}
+				minx = minx < x ? minx : x;
+				miny = miny < y ? miny : y;
+				maxx = maxx > x ? maxx : x;
+				maxy = maxy > y ? maxy : y;
+			}
+		}
+		cout << "Loading a " << inputBeltCount << " to " << outputBeltCount << " balancer with dimensions " << (1 + maxx - minx) << "x" << (1 + maxy - miny) << endl;
+	}
+
 	if (optimize)
 	{
 		// replace underground belt entrance and exit with one belt piece
