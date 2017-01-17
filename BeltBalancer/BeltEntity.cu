@@ -2,6 +2,10 @@
 #include <vector>
 #include <iostream>
 #include <thread>
+#include <string>
+#include <sstream>
+#include "windows.h"
+#include <time.h>
 
 #define MIN(x, y) ((x) < (y) ? x : y)
 
@@ -339,7 +343,7 @@ double testThroughputCombinationsOnGPU(BeltEntity* entities, size_t size, unsign
 int updateEntities(BeltEntity* entities, size_t size, unsigned int iterations);
 
 void testThroughput(BeltEntity* source, size_t size, unsigned int iterations, vector<int>& inputIds, vector<int>& outputIds,
-					  int startIndex, int endIndex, vector<float>& inputData, vector<float>& outputData, float* results)
+					  int startIndex, int endIndex, vector<float>& inputData, vector<float>& outputData, float* results, double* progress)
 {
 	BeltEntity* entities = new BeltEntity[size];
 
@@ -387,12 +391,30 @@ void testThroughput(BeltEntity* source, size_t size, unsigned int iterations, ve
 		}
 
 		results[index] = actualOutput / maxOutput;
+
+		*progress = (index - startIndex + 1) / (double)(endIndex - startIndex);
 	}
 
 	delete [] entities;
 }
 
-double testThroughputCombinationsOnCPU(BeltEntity* entities, size_t size, unsigned int iterations, int minPopCount, int maxPopCount, int threadCount)
+string formatSeconds(long sec)
+{
+	long day = sec / (60 * 60 * 24);
+	sec -= day * 60 * 60 * 24;
+	long h = sec / (60 * 60);
+	sec -= h * 60 * 60;
+	long min = sec / 60;
+	sec -= min * 60;
+	stringstream ss;
+	if (day != 0) ss << day << "d ";
+	if (day != 0 || h != 0) ss << h << "h ";
+	if (day != 0 || h != 0 || min != 0) ss << min << "m ";
+	ss << sec << "s";
+	return ss.str();
+}
+
+double testThroughputCombinationsOnCPU(BeltEntity* entities, size_t size, unsigned int iterations, int minPopCount, int maxPopCount, int threadCount, bool printProgress)
 {
 	vector<int> inputIds;
 	vector<int> outputIds;
@@ -451,33 +473,57 @@ double testThroughputCombinationsOnCPU(BeltEntity* entities, size_t size, unsign
 	
 	threadCount = MIN(threadCount, result.size());
 	
-	if (threadCount <= 1)
-	{
-		testThroughput(entities, size, iterations, inputIds, outputIds, 0, result.size(), inputCombinations, outputCombinations, &result[0]);
-	}
-	else
-	{
-		thread** threads = new thread*[threadCount];
+	thread** threads = new thread*[threadCount];
+	double* progress = new double[threadCount];
 		
-		for (int i = 0; i < threadCount; i++)
+	for (int i = 0; i < threadCount; i++)
+	{
+		int startIndex = (result.size() / threadCount) * i;
+		int endIndex = (result.size() / threadCount) * (i + 1);
+		if (i == threadCount - 1)
 		{
-			int startIndex = (result.size() / threadCount) * i;
-			int endIndex = (result.size() / threadCount) * (i + 1);
-			if (i == threadCount - 1)
+			endIndex = result.size();
+		}
+		progress[i] = 0;
+		threads[i] = new thread(testThroughput, entities, size, iterations, inputIds, outputIds, startIndex, endIndex, inputCombinations, outputCombinations, &result[0], &progress[i]);
+	}
+
+	if (printProgress)
+	{
+		clock_t start;
+		clock_t end;
+		start = clock();
+		double minProgress = 0;
+		while (minProgress < 1)
+		{
+			Sleep(100);
+			minProgress = 1;
+			for (int i = 0; i < threadCount; i++)
 			{
-				endIndex = result.size();
+				if (progress[i] < minProgress)
+				{
+					minProgress = progress[i];
+				}
 			}
-			threads[i] = new thread(testThroughput, entities, size, iterations, inputIds, outputIds, startIndex, endIndex, inputCombinations, outputCombinations, &result[0]);
+			end = clock();
+			double elapsed = ((end - start) / (double)CLOCKS_PER_SEC);
+			long estimatedSeconds = elapsed / minProgress - elapsed;
+			double p = round(minProgress * 1000) / 10;
+			stringstream ss;
+			ss << "Progress: " << p << ((p - ((int)p) == 0) ? ".0%" : "%") << ((p < 10) ? "  " : " ") << "| estimated time left: " << formatSeconds(estimatedSeconds) << "                ";
+			printAndMoveCursorBack(ss.str());
 		}
-		
-		for (int i = 0; i < threadCount; i++)
-		{
-			threads[i]->join();
-			delete threads[i];
-		}
-		
-		delete[] threads;
+		printAndMoveCursorBack("                                                                   ");
 	}
+		
+	for (int i = 0; i < threadCount; i++)
+	{
+		threads[i]->join();
+		delete threads[i];
+	}
+		
+	delete[] threads;
+	delete[] progress;
 
 	double minimum = 69;
 	

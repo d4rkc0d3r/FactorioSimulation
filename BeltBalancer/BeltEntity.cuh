@@ -3,6 +3,7 @@
 
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
+#include <string>
 
 #define TYPE_BELT 0
 #define TYPE_LEFT_SPLITTER 1
@@ -34,10 +35,12 @@ struct BeltEntity
 
 // result is minimum throughput
 double testThroughputCombinationsOnGPU(BeltEntity* entities, size_t size, unsigned int iterations, int minPopCount, int maxPopCount);
-double testThroughputCombinationsOnCPU(BeltEntity* entities, size_t size, unsigned int iterations, int minPopCount, int maxPopCount, int threads = 4);
+double testThroughputCombinationsOnCPU(BeltEntity* entities, size_t size, unsigned int iterations, int minPopCount, int maxPopCount, int threads, bool printProgress);
 
 int updateOnGPU(BeltEntity* entities, size_t size, unsigned int iterations, int threads);
 int updateOnCPU(BeltEntity* entities, size_t size, unsigned int iterations);
 int updateOnCPU(BeltEntity* entities, size_t size, unsigned int iterations, double throughputThresholdToFinish);
+
+void printAndMoveCursorBack(std::string str);
 
 #endif // BELTENTITY_H

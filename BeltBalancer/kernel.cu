@@ -408,14 +408,14 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 
 	if (testAllThroughputCombinationsCPU)
 	{
-		double minThroughput = floor(testThroughputCombinationsOnCPU(entities, size, iterations, (spawnBelts.size() + voidBelts.size() <= 16) ? 1 : 2, 12, cpuThreads) * 1000) / 10;
+		double minThroughput = floor(testThroughputCombinationsOnCPU(entities, size, iterations, (spawnBelts.size() + voidBelts.size() <= 16) ? 1 : 2, 16, cpuThreads, printProgress) * 1000) / 10;
 
 		cout << "Min Throughput with all combinations: " << minThroughput << "%" << endl;
 	}
 
 	if (testAllThroughputCombinationsGPU)
 	{
-		double minThroughput = floor(testThroughputCombinationsOnGPU(entities, size, iterations, (spawnBelts.size() + voidBelts.size() <= 16) ? 1 : 2, 12) * 1000) / 10;
+		double minThroughput = floor(testThroughputCombinationsOnGPU(entities, size, iterations, (spawnBelts.size() + voidBelts.size() <= 16) ? 1 : 2, 16) * 1000) / 10;
 
 		cout << "Min Throughput with all combinations: " << minThroughput << "%" << endl;
 	}
@@ -453,6 +453,7 @@ int main(int argc, char** argv)
 	bool doBenchmark = false;
 	bool timeIt = false;
 	bool optimize = true;
+	printProgress = true;
 
 	for (int i = 1; i < argc; i++)
 	{
