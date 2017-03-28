@@ -343,15 +343,15 @@ double testThroughputCombinationsOnGPU(BeltEntity* entities, size_t size, unsign
 int updateEntities(BeltEntity* entities, size_t size, unsigned int iterations);
 
 void testThroughput(BeltEntity* source, size_t size, unsigned int iterations, vector<int>& inputIds, vector<int>& outputIds,
-					  int startIndex, int endIndex, vector<float>& inputData, vector<float>& outputData, float* results, double* progress)
+					long long startIndex, long long endIndex, vector<float>& inputData, vector<float>& outputData, float* results, long long* progress)
 {
 	BeltEntity* entities = new BeltEntity[size];
 
-	for (int index = startIndex; index < endIndex; index++)
+	for (long long index = startIndex; index < endIndex; index++)
 	{
 		memcpy(entities, source, size * sizeof(BeltEntity));
 
-		int inputDataSize = inputData.size() / inputIds.size();
+		long long inputDataSize = inputData.size() / inputIds.size();
 		
 		int inputOffset = (index % inputDataSize) * inputIds.size();
 		int outputOffset = (index / inputDataSize) * outputIds.size();
@@ -390,9 +390,8 @@ void testThroughput(BeltEntity* source, size_t size, unsigned int iterations, ve
 			actualOutput += entities[outputIds[i]].lastThroughput;
 		}
 
-		results[index] = actualOutput / maxOutput;
-
-		*progress = (index - startIndex + 1) / (double)(endIndex - startIndex);
+		*results = MIN(actualOutput / maxOutput, *results);
+		++*progress;
 	}
 
 	delete [] entities;
@@ -448,7 +447,7 @@ double testThroughputCombinationsOnCPU(BeltEntity* entities, size_t size, unsign
 			inCopy = inCopy >> 1;
 		}
 	}
-	int inputCombinationsSize = inputCombinations.size() / inputBeltCount;
+	long long inputCombinationsSize = inputCombinations.size() / inputBeltCount;
 
 	vector<float> outputCombinations;
 	for (int out = 0; out < (1 << outputBeltCount); out++)
@@ -465,27 +464,27 @@ double testThroughputCombinationsOnCPU(BeltEntity* entities, size_t size, unsign
 			outCopy = outCopy >> 1;
 		}
 	}
-	int outputCombinationsSize = outputCombinations.size() / outputBeltCount;
+	long long outputCombinationsSize = outputCombinations.size() / outputBeltCount;
 
-	int testCases = outputCombinationsSize * inputCombinationsSize;
+	long long testCases = outputCombinationsSize * inputCombinationsSize;
 	
-	vector<float> result(testCases, 69.0f);
-	
-	threadCount = MIN(threadCount, result.size());
+	threadCount = MIN(threadCount, testCases);
 	
 	thread** threads = new thread*[threadCount];
-	double* progress = new double[threadCount];
+	long long* progress = new long long[threadCount];
+
+	vector<float> result(threadCount, 69.0f);
 		
 	for (int i = 0; i < threadCount; i++)
 	{
-		int startIndex = (result.size() / threadCount) * i;
-		int endIndex = (result.size() / threadCount) * (i + 1);
+		long long startIndex = (testCases / threadCount) * i;
+		long long endIndex = (testCases / threadCount) * (i + 1);
 		if (i == threadCount - 1)
 		{
-			endIndex = result.size();
+			endIndex = testCases;
 		}
 		progress[i] = 0;
-		threads[i] = new thread(testThroughput, entities, size, iterations, inputIds, outputIds, startIndex, endIndex, inputCombinations, outputCombinations, &result[0], &progress[i]);
+		threads[i] = new thread(testThroughput, entities, size, iterations, inputIds, outputIds, startIndex, endIndex, inputCombinations, outputCombinations, &result[i], &progress[i]);
 	}
 
 	if (printProgress)
@@ -493,22 +492,20 @@ double testThroughputCombinationsOnCPU(BeltEntity* entities, size_t size, unsign
 		clock_t start;
 		clock_t end;
 		start = clock();
-		double minProgress = 0;
-		while (minProgress < 1)
+		long long prog = 0;
+		while (prog < testCases)
 		{
 			Sleep(100);
-			minProgress = 1;
+			prog = 0;
 			for (int i = 0; i < threadCount; i++)
 			{
-				if (progress[i] < minProgress)
-				{
-					minProgress = progress[i];
-				}
+				prog += progress[i];
 			}
 			end = clock();
+			double progPercent = prog / (double)testCases;
 			double elapsed = ((end - start) / (double)CLOCKS_PER_SEC);
-			long estimatedSeconds = elapsed / minProgress - elapsed;
-			double p = round(minProgress * 1000) / 10;
+			long estimatedSeconds = elapsed / progPercent - elapsed;
+			double p = round(progPercent * 1000) / 10;
 			stringstream ss;
 			ss << "Progress: " << p << ((p - ((int)p) == 0) ? ".0%" : "%") << ((p < 10) ? "  " : " ") << "| estimated time left: " << formatSeconds(estimatedSeconds) << "                ";
 			printAndMoveCursorBack(ss.str());
