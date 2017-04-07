@@ -423,6 +423,37 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 	delete[] workingCopy;
 }
 
+void sortEntities(BeltEntity* entities, size_t size)
+{
+	BeltEntity* sortedEntities = new BeltEntity[size];
+	unsigned int* newId = new unsigned int[size];
+	for (unsigned int i = 0; i < size; i++)
+	{
+		newId[i] = 0;
+	}
+	unsigned int currentIndex = 0;
+	for (unsigned int typeId = 0; typeId <= TYPE_RIGHT_SPLITTER; typeId++)
+	{
+		for (unsigned int i = 0; i < size; i++)
+		{
+			if (entities[i].type == typeId)
+			{
+				sortedEntities[currentIndex] = entities[i];
+				newId[i] = currentIndex - 1;
+				currentIndex++;
+			}
+		}
+	}
+	for (unsigned int i = 0; i < size; i++)
+	{
+		sortedEntities[i].next = newId[sortedEntities[i].next + 1];
+		sortedEntities[i].otherSplitterPart = newId[sortedEntities[i].otherSplitterPart + 1];
+	}
+	memcpy(entities, sortedEntities, size * sizeof(BeltEntity));
+	delete[] sortedEntities;
+	delete[] newId;
+}
+
 void printHelp()
 {
 	cout << "beltbalancer.exe -f=YOUR_BALANCER_FILE.txt ([-cpu]|[-gpu]|[-cudadev=N]) [-t2]" << endl;
@@ -453,6 +484,7 @@ int main(int argc, char** argv)
 	bool doBenchmark = false;
 	bool timeIt = false;
 	bool optimize = true;
+	bool preSort = true;
 	printProgress = true;
 
 	for (int i = 1; i < argc; i++)
@@ -523,6 +555,10 @@ int main(int argc, char** argv)
 		{
 			adaptiveIterationCount = true;
 		}
+		else if (arg.compare("-nosort") == 0)
+		{
+			preSort = false;
+		}
 		else if (arg.compare("-h") == 0 || arg.compare("-?") == 0)
 		{
 			printHelp();
@@ -580,6 +616,11 @@ int main(int argc, char** argv)
 	clock_t end;
 
 	start = clock();
+
+	if (preSort)
+	{
+		sortEntities(belts, size);
+	}
 
 	if (!doBenchmark)
 	{

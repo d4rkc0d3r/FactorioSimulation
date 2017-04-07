@@ -5,14 +5,14 @@
 #include "device_launch_parameters.h"
 #include <string>
 
-#define TYPE_BELT 0
-#define TYPE_LEFT_SPLITTER 1
-#define TYPE_RIGHT_SPLITTER 2
-#define TYPE_UNDERGROUND_ENTRANCE 3
-#define TYPE_UNDERGROUND_EXIT 4
-#define TYPE_SPAWN 5
-#define TYPE_VOID 6
-#define TYPE_BLOCK 7
+#define TYPE_BLOCK 0
+#define TYPE_SPAWN 1
+#define TYPE_VOID 2
+#define TYPE_BELT 3
+#define TYPE_UNDERGROUND_ENTRANCE 4
+#define TYPE_UNDERGROUND_EXIT 5
+#define TYPE_LEFT_SPLITTER 6
+#define TYPE_RIGHT_SPLITTER 7
 #define TYPE_PLS_DELETE 8
 
 struct BeltEntity
