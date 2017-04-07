@@ -457,19 +457,25 @@ void sortEntities(BeltEntity* entities, size_t size)
 void printHelp()
 {
 	cout << "beltbalancer.exe -f=YOUR_BALANCER_FILE.txt ([-cpu]|[-gpu]|[-cudadev=N]) [-t2]" << endl;
-	cout << "                 [-tall(cpu|gpu)] [-i=N] [-benchmark] [-time] [-s]" << endl;
+	cout << "                 [-tall(cpu[N]|gpu)] [-i=N] [-benchmark] [-time] [-s] [-a]" << endl;
 	cout << "             " << endl;
 	cout << "  -f=FILE    loads the blueprint string file FILE, if not found tries again" << endl;
 	cout << "             with %APPDATA%\\factorio\\script-output\\blueprint-string\\FILE" << endl;
 	cout << "  -t2        tests all throughput combinations where exactly two inputs and" << endl;
 	cout << "             outputs are used" << endl;
 	cout << "  -tall      tests all throughput combinations where more or equal to two" << endl;
-	cout << "             inputs and outputs are used" << endl;
+	cout << "             inputs and outputs are used. N specifies how many threads will" << endl;
+	cout << "             be launched and is 1 by default" << endl;
 	cout << "  -i=N       specifies the number of iterations the simulation should run" << endl;
-	cout << "             default is 2 * (2 * nSplitter + nInputs + nOutputs + 1)" << endl;
-	cout << "  -time      times the complete testing time needed" << endl;
+	cout << "             default is 2 * (2 * nSplitter + nInputs + nOutputs + 1) or 5" << endl;
+	cout << "             if -a is also selected" << endl;
+	cout << "  -time      times the complete testing time needed excluding loading and" << endl;
+	cout << "             parsing the blueprint file" << endl;
 	cout << "  -s         does suppress the ongoing progress display" << endl;
 	cout << "             useful if you pipe the output to a file" << endl;
+	cout << "  -a         does run the simulation until it converges instead of running" << endl;
+	cout << "             it for a fixed amount of steps. Massive speed gains but does" << endl;
+	cout << "             not converge for a minority of blueprints" << endl;
 	cout << "  -benchmark times only the simulation time needed to run the specified amount" << endl;
 	cout << "             of iterations" << endl;
 }
@@ -619,6 +625,7 @@ int main(int argc, char** argv)
 
 	if (preSort)
 	{
+		// sorting the array helps the branch predictor in UpdateOnCPU and thus improves performance by ~3.5%
 		sortEntities(belts, size);
 	}
 
