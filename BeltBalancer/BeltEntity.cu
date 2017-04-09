@@ -6,6 +6,19 @@
 #include <sstream>
 #include "windows.h"
 #include <time.h>
+#include <mmintrin.h>
+
+void inline minss(float& a, float b, float c)
+{
+	// Branchless SSE min.
+	_mm_store_ss(&a, _mm_min_ss(_mm_set_ss(a), _mm_min_ss(_mm_set_ss(b), _mm_set_ss(c))));
+}
+
+float inline minss(float a, float b)
+{
+	_mm_store_ss(&a, _mm_min_ss(_mm_set_ss(a), _mm_set_ss(b)));
+	return a;
+}
 
 #define MIN(x, y) ((x) < (y) ? x : y)
 
@@ -616,7 +629,7 @@ int updateOnCPU(BeltEntity* entities, size_t size, unsigned int iterations)
 			case TYPE_UNDERGROUND_ENTRANCE:
 			case TYPE_UNDERGROUND_EXIT:
 				next = entities + b->next + 1;
-				next->addToBuffer = MIN(b->maxThroughput, b->buffer);
+				next->addToBuffer = minss(b->maxThroughput, b->buffer);
 				if (next->addToBuffer + next->buffer > next->maxThroughput * 2)
 				{
 					next->addToBuffer = next->maxThroughput * 2 - next->buffer;
@@ -624,20 +637,18 @@ int updateOnCPU(BeltEntity* entities, size_t size, unsigned int iterations)
 				b->subtractFromBuffer = next->addToBuffer;
 				break;
 			case TYPE_VOID:
-				b->subtractFromBuffer = MIN(b->buffer, b->voidAmount);
+				b->subtractFromBuffer = minss(b->buffer, b->voidAmount);
 				break;
 			case TYPE_LEFT_SPLITTER:
 				r = entities + b->otherSplitterPart + 1;
 				lnext = entities + b->next + 1;
 				rnext = entities + r->next + 1;
 				ldemand = lnext->maxThroughput * 2 - lnext->buffer;
-				ldemand = MIN(ldemand, lnext->maxThroughput);
-				ldemand = MIN(ldemand, b->maxThroughput);
+				minss(ldemand, lnext->maxThroughput, b->maxThroughput);
 				rdemand = rnext->maxThroughput * 2 - rnext->buffer;
-				rdemand = MIN(rdemand, rnext->maxThroughput);
-				rdemand = MIN(rdemand, r->maxThroughput);
-				lsupply = MIN(b->maxThroughput, b->buffer);
-				rsupply = MIN(r->maxThroughput, r->buffer);
+				minss(rdemand, rnext->maxThroughput, r->maxThroughput);
+				lsupply = minss(b->maxThroughput, b->buffer);
+				rsupply = minss(r->maxThroughput, r->buffer);
 				demand = ldemand + rdemand;
 				supply = lsupply + rsupply;
 				if (demand >= supply)
