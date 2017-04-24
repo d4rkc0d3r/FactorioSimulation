@@ -220,8 +220,16 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 	cout << decompressed << endl << endl;
 #endif
 
-	decompressed = "," + decompressed.substr(22, decompressed.size() - 22);
-
+	string startString("entities={");
+	int start = decompressed.find(startString);
+	if (start == string::npos)
+	{
+		*outputSize = 0;
+		return 0;
+	}
+	start += startString.length();
+	decompressed = "," + decompressed.substr(start, decompressed.size() - start);
+	
 	vector<BPEntity> entities = parseString(decompressed);
 
 	double minx = 0;
