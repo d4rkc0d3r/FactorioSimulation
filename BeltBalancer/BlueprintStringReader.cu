@@ -224,6 +224,8 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 	int start = decompressed.find(startString);
 	if (start == string::npos)
 	{
+		cerr << "did not find the start string \"" << startString << "\"" << endl;
+		cerr << decompressed << endl;
 		*outputSize = 0;
 		return 0;
 	}
@@ -437,6 +439,7 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 				int nd = listWithDualSplitter[b.next].direction;
 				if ((8 + nd - e.direction) % 4 == 2)
 				{
+					cerr << "[Warning] Detected sideload on underground belt" << endl;
 					// side loading on underground belt exit is bad!
 				}
 				if (nd == e.direction)
@@ -462,7 +465,32 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 		}
 	}
 
-	// search for spawn belts
+	// detecting output splitter
+	for (int i = 0; i < output.size(); i++)
+	{
+		if (output[i].type == TYPE_LEFT_SPLITTER && output[output[i].otherSplitterPart].next == -1 && output[i].next == -1)
+		{
+#ifdef _DEBUG
+			cerr << "splitter pointing in nirvana" << endl;
+#endif
+			BeltEntity* lsplitter = &output[i];
+			BeltEntity* rsplitter = &output[lsplitter->otherSplitterPart];
+			lsplitter->next = output.size();
+			rsplitter->next = output.size() + 1;
+			BeltEntity b;
+			b.type = TYPE_VOID;
+			b.maxThroughput = lsplitter->maxThroughput;
+			b.next = -1;
+			b.otherSplitterPart = -1;
+			b.buffer = 0;
+			b.addToBuffer = 0;
+			b.subtractFromBuffer = 0;
+			output.push_back(b);
+			output.push_back(b);
+		}
+	}
+
+	// search for spawn belts and splitter
 	set<int> hasPrevious;
 	for (BeltEntity& b : output)
 	{
@@ -475,6 +503,26 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 			output[i].type = TYPE_SPAWN;
 		}
 	}
+	for (int i = 0; i < output.size(); i++)
+	{
+		if (output[i].type == TYPE_LEFT_SPLITTER && hasPrevious.find(i) == hasPrevious.end() && hasPrevious.find(output[i].otherSplitterPart) == hasPrevious.end())
+		{
+#ifdef _DEBUG
+			cerr << "splitter getting nothing" << endl;
+#endif
+			BeltEntity b;
+			b.type = TYPE_SPAWN;
+			b.maxThroughput = output[i].maxThroughput;
+			b.next = i;
+			b.otherSplitterPart = -1;
+			b.buffer = 0;
+			b.addToBuffer = 0;
+			b.subtractFromBuffer = 0;
+			output.push_back(b);
+			b.next = output[i].otherSplitterPart;
+			output.push_back(b);
+		}
+	}
 
 	// find dimensions without counting spawn and void belts
 	{
@@ -484,6 +532,11 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 		int maxy = 0;
 		int inputBeltCount = 0;
 		int outputBeltCount = 0;
+		for (BeltEntity& b : output)
+		{
+			inputBeltCount += b.type == TYPE_SPAWN;
+			outputBeltCount += b.type == TYPE_VOID;
+		}
 		for (int x = 0; x < width; x++)
 		{
 			for (int y = 0; y < height; y++)
@@ -494,12 +547,10 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 				}
 				if (output[beltIdMap[x][y]].type == TYPE_SPAWN)
 				{
-					inputBeltCount++;
 					continue;
 				}
 				if (output[beltIdMap[x][y]].type == TYPE_VOID)
 				{
-					outputBeltCount++;
 					continue;
 				}
 				minx = minx < x ? minx : x;
