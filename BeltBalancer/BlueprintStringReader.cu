@@ -4,10 +4,16 @@
 #include "base64.h"
 #include "lib\zlib.h"
 #include <iostream>
+#include <string>
+#include <stdexcept>
+#include <iomanip>
+#include <sstream>
 #include <set>
+#include "JSONObject.h"
 
 using namespace std;
 
+/// from http://windrealm.org/tutorials/decompress-gzip-stream.php
 bool gzipInflate(const std::string& compressedBytes, std::string& uncompressedBytes) {
 	if (compressedBytes.size() == 0) {
 		uncompressedBytes = compressedBytes;
@@ -70,6 +76,48 @@ bool gzipInflate(const std::string& compressedBytes, std::string& uncompressedBy
 	return true;
 }
 
+/// from https://panthema.net/2007/0328-ZLibString.html
+std::string decompress_string(const std::string& str)
+{
+	z_stream zs;                        // z_stream is zlib's control structure
+	memset(&zs, 0, sizeof(zs));
+
+	if (inflateInit(&zs) != Z_OK)
+		throw(std::runtime_error("inflateInit failed while decompressing."));
+
+	zs.next_in = (Bytef*)str.data();
+	zs.avail_in = str.size();
+
+	int ret;
+	char outbuffer[32768];
+	std::string outstring;
+
+	// get the decompressed bytes blockwise using repeated calls to inflate
+	do {
+		zs.next_out = reinterpret_cast<Bytef*>(outbuffer);
+		zs.avail_out = sizeof(outbuffer);
+
+		ret = inflate(&zs, 0);
+
+		if (outstring.size() < zs.total_out) {
+			outstring.append(outbuffer,
+				zs.total_out - outstring.size());
+		}
+
+	} while (ret == Z_OK);
+
+	inflateEnd(&zs);
+
+	if (ret != Z_STREAM_END) {          // an error occurred that was not EOF
+		std::ostringstream oss;
+		oss << "Exception during zlib decompression: (" << ret << ") "
+			<< zs.msg;
+		throw(std::runtime_error(oss.str()));
+	}
+
+	return outstring;
+}
+
 struct BPEntity
 {
 	string name;
@@ -79,6 +127,30 @@ struct BPEntity
 	// 0 = -y, 2 = +x, 4 = +y, 6 = -x
 	int direction;
 };
+
+vector<BPEntity> parseVanillaJSON(string jsonString)
+{
+	JSONObject* json = new JSONObject(jsonString);
+	vector<BPEntity> out;
+#ifdef _DEBUG
+	cout << json->ToString(2) << endl;
+#endif // _DEBUG
+	vector<JSONObject*>* entities = json->GetPath("blueprint.entities")->GetArray();
+
+	for (int i = 0; i < entities->size(); i++)
+	{
+		JSONObject* j = entities->at(i);
+		BPEntity e;
+		e.name = j->GetString("name") + ((j->Get("type") != nullptr) ? "-" + j->GetString("type") : "");
+		e.direction = (j->Get("direction") != nullptr) ? j->GetNumber("direction") : 0;
+		e.x = j->Get("position")->GetNumber("x");
+		e.y = j->Get("position")->GetNumber("y");
+		out.push_back(e);
+	}
+
+	delete json;
+	return out;
+}
 
 BPEntity parseEntity(const string& s, unsigned int& pos)
 {
@@ -204,35 +276,67 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 			base64Blueprint += c;
 		}
 	}
-
-	string compressedBlueprint = base64_decode(base64Blueprint);
-
-	string decompressed;
-
-	if (!gzipInflate(compressedBlueprint, decompressed))
+	bool vanillaFlag = false;
+	if (base64Blueprint.length() % 4 == 1)
 	{
-		// bad
-		*outputSize = 0;
-		return 0;
+#ifdef _DEBUG
+		cout << "base64Blueprint.length() % 4 == 1" << endl;
+#endif
+		base64Blueprint = base64Blueprint.substr(1);
+		vanillaFlag = true;
 	}
 
 #ifdef _DEBUG
-	cout << decompressed << endl << endl;
+	cout << base64Blueprint << endl << endl;
 #endif
 
-	string startString("entities={");
-	int start = decompressed.find(startString);
-	if (start == string::npos)
+	string compressedBlueprint = base64_decode(base64Blueprint);
+
+	if (vanillaFlag)
 	{
-		cerr << "did not find the start string \"" << startString << "\"" << endl;
-		cerr << decompressed << endl;
-		*outputSize = 0;
-		return 0;
+		compressedBlueprint = compressedBlueprint;
 	}
-	start += startString.length();
-	decompressed = "," + decompressed.substr(start, decompressed.size() - start);
-	
-	vector<BPEntity> entities = parseString(decompressed);
+
+#ifdef _DEBUG
+	cout << compressedBlueprint << endl << endl;
+#endif
+
+	string decompressed;
+	vector<BPEntity> entities;
+
+	if (vanillaFlag)
+	{
+		decompressed = decompress_string(compressedBlueprint);
+		entities = parseVanillaJSON(decompressed);
+	}
+	else
+	{
+		if (!gzipInflate(compressedBlueprint, decompressed))
+		{
+			// bad
+			*outputSize = 0;
+			return 0;
+		}
+
+#ifdef _DEBUG
+		cout << "decompressed.length() = " << decompressed.length() << endl;
+		cout << decompressed << endl << endl;
+#endif
+
+		string startString("entities={");
+		int start = decompressed.find(startString);
+		if (start == string::npos)
+		{
+			cerr << "did not find the start string \"" << startString << "\"" << endl;
+			cerr << decompressed << endl;
+			*outputSize = 0;
+			return 0;
+		}
+		start += startString.length();
+		decompressed = "," + decompressed.substr(start, decompressed.size() - start);
+
+		entities = parseString(decompressed);
+	}
 
 	double minx = 0;
 	double miny = 0;
