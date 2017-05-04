@@ -116,9 +116,39 @@ void displayEntities(BeltEntity* entities, size_t size)
 	cout << endl;
 }
 
+string getClipboard()
+{
+	if (!OpenClipboard(nullptr))
+	{
+		return "";
+	}
+	HANDLE hData = GetClipboardData(CF_TEXT);
+	if (hData == nullptr)
+	{
+		return "";
+	}
+	char * pszText = static_cast<char*>(GlobalLock(hData));
+	if (pszText == nullptr)
+	{
+		return "";
+	}
+	string text(pszText);
+	GlobalUnlock(hData);
+	CloseClipboard();
+	return text;
+}
+
 string loadBlueprintFile(string fileName)
 {
 	string output;
+	if (fileName.compare("CLIPBOARD") == 0)
+	{
+		output = getClipboard();
+		if (!output.empty())
+		{
+			return output;
+		}
+	}
 	ifstream t(fileName);
 	stringstream ss;
 	ss << t.rdbuf();
@@ -485,7 +515,7 @@ int main(int argc, char** argv)
 	cudaError_t cudaStatus;
 
 	int iterations = -1;
-	string file = "DUMB_ASS";
+	string file = "CLIPBOARD";
 	int cudaDeviceId = -1;
 	bool doBenchmark = false;
 	bool timeIt = false;
