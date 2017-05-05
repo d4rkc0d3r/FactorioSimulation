@@ -426,6 +426,28 @@ string formatSeconds(long sec)
 	return ss.str();
 }
 
+bool checkCorrectlyOrderedSplitterCombinations(int c, const vector<int>& mergedIds)
+{
+	vector<int> combinations;
+	for (int i = 0; i < mergedIds.size(); i++)
+	{
+		combinations.push_back(c & 1);
+		c = c >> 1;
+	}
+	for (int i = 0; i < mergedIds.size(); i++)
+	{
+		if (combinations[i] == 0 || mergedIds[i] == -1)
+		{
+			continue;
+		}
+		if (combinations[mergedIds[i]] == 0)
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
 double testThroughputCombinationsOnCPU(BeltEntity* entities, size_t size, unsigned int iterations, int minPopCount, int maxPopCount, int threadCount, bool printProgress)
 {
 	vector<int> inputIds;
@@ -445,11 +467,80 @@ double testThroughputCombinationsOnCPU(BeltEntity* entities, size_t size, unsign
 	int inputBeltCount = inputIds.size();
 	int outputBeltCount = outputIds.size();
 
+	vector<int> mergedWithIn;
+	for (int i = 0; i < inputBeltCount; i++)
+	{
+		int nextSplitterId = entities[inputIds[i]].next;
+		if (entities[nextSplitterId + 1].type != TYPE_LEFT_SPLITTER)
+		{
+			mergedWithIn.push_back(-1);
+			continue;
+		}
+		int matchId = -1;
+		for (int j = 0; j < inputBeltCount; j++)
+		{
+			if (i == j) continue;
+			BeltEntity b = entities[entities[inputIds[j]].next + 1];
+			if (b.type == TYPE_RIGHT_SPLITTER && b.otherSplitterPart == nextSplitterId)
+			{
+				matchId = j;
+				break;
+			}
+		}
+		mergedWithIn.push_back(matchId);
+#ifdef _DEBUG
+		if (matchId != -1)
+		{
+			cout << "Input " << i << " shares a splitter with " << matchId << endl;
+		}
+#endif
+	}
+
+	vector<int> mergedWithOut;
+	for (int i = 0; i < outputBeltCount; i++)
+	{
+		mergedWithOut.push_back(-1);
+	}
+	for (int i = 0; i < size; i++)
+	{
+		if (entities[i].type == TYPE_LEFT_SPLITTER &&
+			entities[i].next != -1 &&
+			entities[entities[i].next + 1].type == TYPE_VOID &&
+			entities[entities[i].otherSplitterPart + 1].next != -1 &&
+			entities[entities[entities[i].otherSplitterPart + 1].next + 1].type == TYPE_VOID)
+		{
+			int j = 0;
+			for (; j < outputBeltCount; j++)
+			{
+				if (outputIds[j] == entities[i].next + 1)
+				{
+					break;
+				}
+			}
+			int matchId = 0;
+			for (; matchId < outputBeltCount; matchId++)
+			{
+				if (outputIds[matchId] == entities[entities[i].otherSplitterPart + 1].next + 1)
+				{
+					break;
+				}
+			}
+			mergedWithOut[j] = matchId;
+#ifdef _DEBUG
+			cout << "Output " << j << " shares a splitter with " << matchId << endl;
+#endif
+		}
+	}
+
 	vector<float> inputCombinations;
 	for (int in = 0; in < (1 << inputBeltCount); in++)
 	{
 		int popCount = countSetBits(in);
 		if (popCount < minPopCount || popCount > maxPopCount)
+		{
+			continue;
+		}
+		if (!checkCorrectlyOrderedSplitterCombinations(in, mergedWithIn))
 		{
 			continue;
 		}
@@ -467,6 +558,10 @@ double testThroughputCombinationsOnCPU(BeltEntity* entities, size_t size, unsign
 	{
 		int popCount = countSetBits(out);
 		if (popCount < minPopCount || popCount > maxPopCount)
+		{
+			continue;
+		}
+		if (!checkCorrectlyOrderedSplitterCombinations(out, mergedWithOut))
 		{
 			continue;
 		}
