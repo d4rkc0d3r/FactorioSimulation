@@ -263,7 +263,7 @@ void displayMap(int** map, int width, int height)
 
 BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool optimize)
 {
-	const int maxUndergroundDistance = 4;
+	const int maxUndergroundDistance = 8;
 
 	vector<BeltEntity> output;
 
