@@ -551,6 +551,11 @@ int main(int argc, char** argv)
 				cpuThreads = stoi(arg.substr(8));
 			}
 		}
+		else if (arg.compare("-tall") == 0)
+		{
+			testAllThroughputCombinationsCPU = true;
+			cpuThreads = 1;
+		}
 		else if (arg.compare("-tallgpu") == 0)
 		{
 			testAllThroughputCombinationsGPU = true;
