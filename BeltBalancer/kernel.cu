@@ -486,11 +486,12 @@ void sortEntities(BeltEntity* entities, size_t size)
 
 void printHelp()
 {
-	cout << "beltbalancer.exe -f=YOUR_BALANCER_FILE.txt ([-cpu]|[-gpu]|[-cudadev=N]) [-t2]" << endl;
+	cout << "beltbalancer.exe [-f=YOUR_BALANCER_FILE.txt] ([-cpu]|[-gpu]|[-cudadev=N]) [-t2]" << endl;
 	cout << "                 [-tall(cpu[N]|gpu)] [-i=N] [-benchmark] [-time] [-s] [-a]" << endl;
 	cout << "             " << endl;
 	cout << "  -f=FILE    loads the blueprint string file FILE, if not found tries again" << endl;
 	cout << "             with %APPDATA%\\factorio\\script-output\\blueprint-string\\FILE" << endl;
+	cout << "             if not specified, it loads the string from clipboard" << endl;
 	cout << "  -t2        tests all throughput combinations where exactly two inputs and" << endl;
 	cout << "             outputs are used" << endl;
 	cout << "  -tall      tests all throughput combinations where more or equal to two" << endl;
