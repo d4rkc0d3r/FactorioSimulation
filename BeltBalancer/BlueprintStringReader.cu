@@ -636,10 +636,12 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 		int maxy = 0;
 		int inputBeltCount = 0;
 		int outputBeltCount = 0;
+		int splitterCount = 0;
 		for (BeltEntity& b : output)
 		{
 			inputBeltCount += b.type == TYPE_SPAWN;
 			outputBeltCount += b.type == TYPE_VOID;
+			splitterCount += b.type == TYPE_LEFT_SPLITTER;
 		}
 		for (int x = 0; x < width; x++)
 		{
@@ -663,7 +665,8 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 				maxy = maxy > y ? maxy : y;
 			}
 		}
-		cout << "Loading a " << inputBeltCount << " to " << outputBeltCount << " balancer with dimensions " << (1 + maxx - minx) << "x" << (1 + maxy - miny) << endl;
+		cout << "Loading a " << inputBeltCount << " to " << outputBeltCount << " balancer with dimensions ";
+		cout << (1 + maxx - minx) << "x" << (1 + maxy - miny) << " and " << splitterCount << " splitters" << endl;
 	}
 
 	if (optimize)
