@@ -7,6 +7,7 @@
 #include "windows.h"
 #include <time.h>
 #include <mmintrin.h>
+#include <random>
 
 void inline minss(float& a, float b, float c)
 {
@@ -410,6 +411,57 @@ void testThroughput(BeltEntity* source, size_t size, unsigned int iterations, ve
 	delete [] entities;
 }
 
+void testRandomThroughput(BeltEntity* source, size_t size, unsigned int iterations, int randomSeed, float* results, long long* progress)
+{
+	vector<int> inputIds;
+	vector<int> outputIds;
+	for (int i = 0; i < size; i++)
+	{
+		if (source[i].type == TYPE_SPAWN)
+		{
+			inputIds.push_back(i);
+		}
+		else if (source[i].type == TYPE_VOID)
+		{
+			outputIds.push_back(i);
+		}
+	}
+
+	int inputBeltCount = inputIds.size();
+	int outputBeltCount = outputIds.size();
+
+	vector<float> inputData;
+	vector<float> outputData;
+
+	uniform_int_distribution<int> uniformDistribution(0, 1);
+	mt19937 rng;
+	rng.seed(randomSeed);
+
+	while (true)
+	{
+		inputData.clear();
+		int ic = 0;
+		for (int i = 0; i < inputBeltCount; i++)
+		{
+			int r = uniformDistribution(rng);
+			ic += r;
+			inputData.push_back((float)r);
+		}
+		outputData.clear();
+		int oc = 0;
+		for (int i = 0; i < outputBeltCount; i++)
+		{
+			int r = uniformDistribution(rng);
+			oc += r;
+			outputData.push_back((float)r);
+		}
+		if (ic > 0 && oc > 0)
+		{
+			testThroughput(source, size, iterations, inputIds, outputIds, 0, 1, inputData, outputData, results, progress);
+		}
+	}
+}
+
 string formatSeconds(long sec)
 {
 	long day = sec / (60 * 60 * 24);
@@ -641,6 +693,39 @@ double testThroughputCombinationsOnCPU(BeltEntity* entities, size_t size, unsign
 	}
 	
 	return minimum;
+}
+
+double testThroughputCombinationsRandomly(BeltEntity* entities, size_t size, unsigned int iterations, int threadCount)
+{
+	thread** threads = new thread*[threadCount];
+	long long* progress = new long long[threadCount];
+
+	vector<float> result(threadCount, 69.0f);
+
+	for (int i = 0; i < threadCount; i++)
+	{
+		progress[i] = 0;
+		threads[i] = new thread(testRandomThroughput, entities, size, iterations, rand(), &result[i], &progress[i]);
+	}
+
+	long long prog = 0;
+	while (true)
+	{
+		Sleep(100);
+		prog = 0;
+		double minThroughput = 1;
+		for (int i = 0; i < threadCount; i++)
+		{
+			prog += progress[i];
+			if (minThroughput > result[i])
+			{
+				minThroughput = result[i];
+			}
+		}
+		stringstream ss;
+		ss << "Simulated combinations: " << prog << " | min throughput: " << (round(minThroughput * 1000) / 10) << "%                ";
+		printAndMoveCursorBack(ss.str());
+	}
 }
 
 int updateOnGPU(BeltEntity* entities, size_t size, unsigned int iterations, int threads)

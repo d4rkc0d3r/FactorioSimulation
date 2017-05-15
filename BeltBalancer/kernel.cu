@@ -50,6 +50,7 @@ bool testFullLoadThroughput = true;
 bool testAllTwoBeltThroughputCombinations = false;
 bool testAllThroughputCombinationsGPU = false;
 bool testAllThroughputCombinationsCPU = false;
+bool testRandomThroughputCombinations = false;
 int threads = 256;
 int cpuThreads = 1;
 
@@ -450,6 +451,11 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 		cout << "Min Throughput with all combinations: " << minThroughput << "%" << endl;
 	}
 
+	if (testRandomThroughputCombinations)
+	{
+		testThroughputCombinationsRandomly(entities, size, iterations, cpuThreads);
+	}
+
 	delete[] workingCopy;
 }
 
@@ -487,7 +493,8 @@ void sortEntities(BeltEntity* entities, size_t size)
 void printHelp()
 {
 	cout << "beltbalancer.exe [-f=YOUR_BALANCER_FILE.txt] ([-cpu]|[-gpu]|[-cudadev=N]) [-t2]" << endl;
-	cout << "                 [-tall(cpu[N]|gpu)] [-i=N] [-benchmark] [-time] [-s] [-a]" << endl;
+	cout << "                 [-tall(cpu[N]|gpu)] [-trandom[N]] [-i=N] [-benchmark] [-time]" << endl;
+	cout << "                 [-s] [-a]" << endl;
 	cout << "             " << endl;
 	cout << "  -f=FILE    loads the blueprint string file FILE, if not found tries again" << endl;
 	cout << "             with %APPDATA%\\factorio\\script-output\\blueprint-string\\FILE" << endl;
@@ -497,6 +504,8 @@ void printHelp()
 	cout << "  -tall      tests all throughput combinations where more or equal to two" << endl;
 	cout << "             inputs and outputs are used. N specifies how many threads will" << endl;
 	cout << "             be launched and is 1 by default" << endl;
+	cout << "  -trandom   tests random throughput combinations. N specifies how many threads" << endl;
+	cout << "             will be launched and is 1 by default" << endl;
 	cout << "  -i=N       specifies the number of iterations the simulation should run" << endl;
 	cout << "             default is 2 * (2 * nSplitter + nInputs + nOutputs + 1) or 5" << endl;
 	cout << "             if -a is also selected" << endl;
@@ -555,6 +564,14 @@ int main(int argc, char** argv)
 		{
 			testAllThroughputCombinationsCPU = true;
 			cpuThreads = 1;
+		}
+		else if (regex_match(arg, regex("-trandom(\\d*)")))
+		{
+			testRandomThroughputCombinations = true;
+			if (arg.length() > 8)
+			{
+				cpuThreads = stoi(arg.substr(8));
+			}
 		}
 		else if (arg.compare("-tallgpu") == 0)
 		{
