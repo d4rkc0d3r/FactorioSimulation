@@ -560,10 +560,13 @@ int main(int argc, char** argv)
 				cpuThreads = stoi(arg.substr(8));
 			}
 		}
-		else if (arg.compare("-tall") == 0)
+		else if (regex_match(arg, regex("-tall(\\d*)")))
 		{
 			testAllThroughputCombinationsCPU = true;
-			cpuThreads = 1;
+			if (arg.length() > 5)
+			{
+				cpuThreads = stoi(arg.substr(5));
+			}
 		}
 		else if (regex_match(arg, regex("-trandom(\\d*)")))
 		{
