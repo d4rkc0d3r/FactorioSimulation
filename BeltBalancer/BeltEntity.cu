@@ -695,6 +695,134 @@ double testThroughputCombinationsOnCPU(BeltEntity* entities, size_t size, unsign
 	return minimum;
 }
 
+double testThroughputCombinationsLocally(BeltEntity* entities, size_t size, unsigned int iterations, int threadCount, bool printProgress)
+{
+	vector<int> inputIds;
+	vector<int> outputIds;
+	for (int i = 0; i < size; i++)
+	{
+		if (entities[i].type == TYPE_SPAWN)
+		{
+			inputIds.push_back(i);
+		}
+		else if (entities[i].type == TYPE_VOID)
+		{
+			outputIds.push_back(i);
+		}
+	}
+
+	int inputBeltCount = inputIds.size();
+	int outputBeltCount = outputIds.size();
+
+	int maxBelts = MIN(inputBeltCount, outputBeltCount) / 2;
+	double minimum = 1;
+
+	for (int beltCount = 2; beltCount <= maxBelts; beltCount++)
+	{
+
+		vector<float> inputCombinations;
+		for (int off = 0; off <= inputBeltCount - beltCount; off++)
+		{
+			for (int i = 0; i < off; i++)
+			{
+				inputCombinations.push_back(0.0f);
+			}
+			for (int i = 0; i < beltCount; i++)
+			{
+				inputCombinations.push_back(1.0f);
+			}
+			for (int i = 0; i < inputBeltCount - beltCount - off; i++)
+			{
+				inputCombinations.push_back(0.0f);
+			}
+		}
+		long long inputCombinationsSize = inputCombinations.size() / inputBeltCount;
+
+		vector<float> outputCombinations;
+		for (int off = 0; off <= outputBeltCount - beltCount; off++)
+		{
+			for (int i = 0; i < off; i++)
+			{
+				outputCombinations.push_back(0.0f);
+			}
+			for (int i = 0; i < beltCount; i++)
+			{
+				outputCombinations.push_back(1.0f);
+			}
+			for (int i = 0; i < outputBeltCount - beltCount - off; i++)
+			{
+				outputCombinations.push_back(0.0f);
+			}
+		}
+		long long outputCombinationsSize = outputCombinations.size() / outputBeltCount;
+
+		long long testCases = outputCombinationsSize * inputCombinationsSize;
+
+		int actualThreadCount = MIN(threadCount, testCases);
+
+		thread** threads = new thread*[actualThreadCount];
+		long long* progress = new long long[actualThreadCount];
+
+		vector<float> result;
+
+		for (int i = 0; i < actualThreadCount; i++)
+		{
+			long long startIndex = (testCases / actualThreadCount) * i;
+			long long endIndex = (testCases / actualThreadCount) * (i + 1);
+			if (i == actualThreadCount - 1)
+			{
+				endIndex = testCases;
+			}
+			result.push_back(1.0f);
+			progress[i] = 0;
+			threads[i] = new thread(testThroughput, entities, size, iterations, inputIds, outputIds, startIndex, endIndex, inputCombinations, outputCombinations, &result[i], &progress[i]);
+		}
+
+		if (printProgress)
+		{
+			long long prog = 0;
+			while (prog < testCases)
+			{
+				Sleep(100);
+				prog = 0;
+				for (int i = 0; i < actualThreadCount; i++)
+				{
+					prog += progress[i];
+					minimum = MIN(minimum, result[i]);
+				}
+				double progPercent = prog / (double)testCases;
+				double p = floor(progPercent * 1000) / 10;
+				stringstream ss;
+				ss << beltCount << "/" << maxBelts << " | subprogress: " << p << ((p - ((int)p) == 0) ? ".0%" : "%") << ((p < 10) ? "  " : " ");
+				ss << " | min throughput: " << (round(minimum * 1000) / 10) << "%                ";
+				printAndMoveCursorBack(ss.str());
+			}
+		}
+
+		for (int i = 0; i < actualThreadCount; i++)
+		{
+			threads[i]->join();
+			delete threads[i];
+		}
+
+		delete[] threads;
+		delete[] progress;
+
+		for (int i = 0; i < result.size(); i++)
+		{
+			if (result[i] < minimum)
+			{
+				minimum = result[i];
+			}
+		}
+
+	}
+
+	printAndMoveCursorBack("                                                                   ");
+
+	return minimum;
+}
+
 double testThroughputCombinationsRandomly(BeltEntity* entities, size_t size, unsigned int iterations, int threadCount)
 {
 	thread** threads = new thread*[threadCount];

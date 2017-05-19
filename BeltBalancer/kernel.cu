@@ -51,6 +51,7 @@ bool testAllTwoBeltThroughputCombinations = false;
 bool testAllThroughputCombinationsGPU = false;
 bool testAllThroughputCombinationsCPU = false;
 bool testRandomThroughputCombinations = false;
+bool testLocalThroughputCombinations = false;
 int threads = 256;
 int cpuThreads = 1;
 
@@ -437,6 +438,13 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 		cout << "Min Throughput with two belts: " << minThroughput << ((printProgress) ? "%                          " : "%") << endl;
 	}
 
+	if (testLocalThroughputCombinations)
+	{
+		double minThroughput = round(testThroughputCombinationsLocally(entities, size, iterations, cpuThreads, printProgress) * 1000) / 10;
+
+		cout << "Min Throughput with local combinations: " << minThroughput << "%" << endl;
+	}
+
 	if (testAllThroughputCombinationsCPU)
 	{
 		double minThroughput = round(testThroughputCombinationsOnCPU(entities, size, iterations, (spawnBelts.size() + voidBelts.size() <= 16) ? 1 : 2, 16, cpuThreads, printProgress) * 1000) / 10;
@@ -574,6 +582,14 @@ int main(int argc, char** argv)
 			if (arg.length() > 8)
 			{
 				cpuThreads = stoi(arg.substr(8));
+			}
+		}
+		else if (regex_match(arg, regex("-tlocal(\\d*)")))
+		{
+			testLocalThroughputCombinations = true;
+			if (arg.length() > 7)
+			{
+				cpuThreads = stoi(arg.substr(7));
 			}
 		}
 		else if (arg.compare("-tallgpu") == 0)
