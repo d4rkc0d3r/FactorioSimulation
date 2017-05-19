@@ -818,7 +818,10 @@ double testThroughputCombinationsLocally(BeltEntity* entities, size_t size, unsi
 
 	}
 
-	printAndMoveCursorBack("                                                                   ");
+	if (printProgress)
+	{
+		printAndMoveCursorBack("                                                                   ");
+	}
 
 	return minimum;
 }
