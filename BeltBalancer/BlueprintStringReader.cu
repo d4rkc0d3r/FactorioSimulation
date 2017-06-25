@@ -538,7 +538,7 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 		else
 		{
 			b.next = beltIdMap[x + dx][y + dy];
-			if (b.next != -1 && output[b.next].type == TYPE_UNDERGROUND_EXIT)
+			if (b.next != -1 && (output[b.next].type == TYPE_UNDERGROUND_EXIT || output[b.next].type == TYPE_UNDERGROUND_ENTRANCE))
 			{
 				int nd = listWithDualSplitter[b.next].direction;
 				if ((8 + nd - e.direction) % 4 == 2)
@@ -546,9 +546,9 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 					cerr << "[Warning] Detected sideload on underground belt" << endl;
 					// side loading on underground belt exit is bad!
 				}
-				if (nd == e.direction)
+				if ((nd == e.direction && output[b.next].type == TYPE_UNDERGROUND_EXIT) || ((8 + nd - e.direction) % 8 == 4 && output[b.next].type == TYPE_UNDERGROUND_ENTRANCE))
 				{
-					// don't fill the back side of an underground belt exit
+					// don't fill the back side of an underground belt exit/entrance
 					b.next = -1;
 				}
 			}
