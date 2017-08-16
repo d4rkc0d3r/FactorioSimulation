@@ -9,12 +9,6 @@
 #include <mmintrin.h>
 #include <random>
 
-void inline minss(float& a, float b, float c)
-{
-	// Branchless SSE min.
-	_mm_store_ss(&a, _mm_min_ss(_mm_set_ss(a), _mm_min_ss(_mm_set_ss(b), _mm_set_ss(c))));
-}
-
 float inline minss(float a, float b)
 {
 	_mm_store_ss(&a, _mm_min_ss(_mm_set_ss(a), _mm_set_ss(b)));
