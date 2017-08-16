@@ -962,6 +962,8 @@ int updateOnCPU(BeltEntity* entities, size_t size, unsigned int iterations)
 				if (demand >= supply)
 				{
 					float halfSupply = supply / 2;
+					b->subtractFromBuffer = lsupply;
+					r->subtractFromBuffer = rsupply;
 					if (ldemand < halfSupply)
 					{
 						lnext->addToBuffer = ldemand;
@@ -977,8 +979,6 @@ int updateOnCPU(BeltEntity* entities, size_t size, unsigned int iterations)
 						lnext->addToBuffer = halfSupply;
 						rnext->addToBuffer = halfSupply;
 					}
-					b->subtractFromBuffer = lsupply;
-					r->subtractFromBuffer = rsupply;
 				}
 				else
 				{
