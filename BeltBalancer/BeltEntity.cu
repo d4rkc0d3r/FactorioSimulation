@@ -941,10 +941,7 @@ int updateOnCPU(BeltEntity* entities, size_t size, unsigned int iterations)
 			case TYPE_UNDERGROUND_EXIT:
 				next = entities + b->next + 1;
 				next->addToBuffer = minss(b->maxThroughput, b->buffer);
-				if (next->addToBuffer + next->buffer > next->maxThroughput * 2)
-				{
-					next->addToBuffer = next->maxThroughput * 2 - next->buffer;
-				}
+				next->addToBuffer = minss(next->addToBuffer, next->maxThroughput * 2 - next->buffer);
 				b->subtractFromBuffer = next->addToBuffer;
 				break;
 			case TYPE_VOID:
@@ -954,10 +951,10 @@ int updateOnCPU(BeltEntity* entities, size_t size, unsigned int iterations)
 				r = entities + b->otherSplitterPart + 1;
 				lnext = entities + b->next + 1;
 				rnext = entities + r->next + 1;
-				ldemand = lnext->maxThroughput * 2 - lnext->buffer;
-				minss(ldemand, lnext->maxThroughput, b->maxThroughput);
-				rdemand = rnext->maxThroughput * 2 - rnext->buffer;
-				minss(rdemand, rnext->maxThroughput, r->maxThroughput);
+				ldemand = minss(lnext->maxThroughput, b->maxThroughput);
+				rdemand = minss(rnext->maxThroughput, r->maxThroughput);
+				ldemand = minss(ldemand, lnext->maxThroughput * 2 - lnext->buffer);
+				rdemand = minss(rdemand, rnext->maxThroughput * 2 - rnext->buffer);
 				lsupply = minss(b->maxThroughput, b->buffer);
 				rsupply = minss(r->maxThroughput, r->buffer);
 				demand = ldemand + rdemand;
