@@ -680,6 +680,10 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 				output[o.next].type = TYPE_PLS_DELETE;
 				o.type = TYPE_BELT;
 				o.next = output[o.next].next;
+				if (o.next == -1)
+				{
+					o.type = TYPE_VOID;
+				}
 			}
 		}
 
