@@ -524,7 +524,7 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 			for (int i = 1; i <= maxUndergroundDistance + 1; i++)
 			{
 				int id = beltIdMap[x + dx * i][y + dy * i];
-				if (id == -1 || output[id].type != TYPE_UNDERGROUND_EXIT)
+				if (id == -1 || output[id].type != TYPE_UNDERGROUND_EXIT || b.maxThroughput != output[id].maxThroughput)
 				{
 					continue;
 				}
