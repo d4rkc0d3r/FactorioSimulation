@@ -947,8 +947,8 @@ int updateOnCPU(BeltEntity* entities, size_t size, unsigned int iterations)
 				rnext = entities + r->next + 1;
 				ldemand = minss(lnext->maxThroughput, b->maxThroughput);
 				rdemand = minss(rnext->maxThroughput, r->maxThroughput);
-				ldemand = minss(ldemand, lnext->maxThroughput * 2 - lnext->buffer);
-				rdemand = minss(rdemand, rnext->maxThroughput * 2 - rnext->buffer);
+				ldemand = minss(ldemand, lnext->maxThroughput + lnext->maxThroughput - lnext->buffer);
+				rdemand = minss(rdemand, rnext->maxThroughput + rnext->maxThroughput - rnext->buffer);
 				lsupply = minss(b->maxThroughput, b->buffer);
 				rsupply = minss(r->maxThroughput, r->buffer);
 				demand = ldemand + rdemand;
