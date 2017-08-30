@@ -42,6 +42,7 @@ double testThroughputCombinationsRandomly(BeltEntity* entities, size_t size, uns
 int updateOnGPU(BeltEntity* entities, size_t size, unsigned int iterations, int threads);
 int updateOnCPU(BeltEntity* entities, size_t size, unsigned int iterations);
 int updateOnCPU(BeltEntity* entities, size_t size, unsigned int iterations, double throughputThresholdToFinish);
+int updateOnCPUSorted(BeltEntity* entities, size_t size, unsigned int iterations, double throughputThresholdToFinish);
 
 void printAndMoveCursorBack(std::string str);
 

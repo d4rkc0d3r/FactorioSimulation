@@ -44,6 +44,7 @@ void printAndMoveCursorBack(string str)
 bool useCPU = true;
 bool printProgress = true;
 bool adaptiveIterationCount = false;
+bool isSorted = true;
 bool testInputBalance = true;
 bool testOuputBalance = true;
 bool testFullLoadThroughput = true;
@@ -65,7 +66,14 @@ int updateEntities(BeltEntity* entities, size_t size, unsigned int iterations)
 	{
 		if (adaptiveIterationCount)
 		{
-			iter = updateOnCPU(entities, size, iterations, 0.0001);
+			if (isSorted)
+			{
+				iter = updateOnCPUSorted(entities, size, iterations, 0.0001);
+			}
+			else
+			{
+				iter = updateOnCPU(entities, size, iterations, 0.0001);
+			}
 		}
 		else
 		{
@@ -636,6 +644,7 @@ int main(int argc, char** argv)
 		else if (arg.compare("-nosort") == 0)
 		{
 			preSort = false;
+			isSorted = false;
 		}
 		else if (arg.compare("-h") == 0 || arg.compare("-?") == 0)
 		{
