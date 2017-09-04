@@ -209,7 +209,7 @@ double testThroughputCombinationsOnGPU(BeltEntity* entities, size_t size, unsign
 	vector<int> inputIds;
 	vector<int> outputIds;
 
-	for (int i = 0; i < size; i++)
+	for (unsigned int i = 0; i < size; i++)
 	{
 		if (entities[i].type == TYPE_SPAWN)
 		{
@@ -223,7 +223,7 @@ double testThroughputCombinationsOnGPU(BeltEntity* entities, size_t size, unsign
 
 	DEBUG(cout << "Detected " << inputIds.size() << " inputs and " << outputIds.size() << " outputs" << endl);
 
-	int testCaseCount = 0;
+	unsigned int testCaseCount = 0;
 	int inputBeltCount = inputIds.size();
 	int outputBeltCount = outputIds.size();
 
@@ -306,7 +306,7 @@ double testThroughputCombinationsOnGPU(BeltEntity* entities, size_t size, unsign
 	cudaMemcpy(dev_entities, entities, sizeof(BeltEntity) * size, cudaMemcpyHostToDevice);
 
 	// duplicate arrays for the belt ids and the belt structures themselves
-	for (int i = 1; i < testCaseCount; i++)
+	for (unsigned int i = 1; i < testCaseCount; i++)
 	{
 		cudaMemcpy(dev_entities + size * i, dev_entities, sizeof(BeltEntity)* size, cudaMemcpyDeviceToDevice);
 		cudaMemcpy(dev_beltIds + (inputBeltCount + outputBeltCount) * i, dev_beltIds, sizeof(int)* (inputBeltCount + outputBeltCount), cudaMemcpyDeviceToDevice);
@@ -361,15 +361,15 @@ void testThroughput(BeltEntity* source, size_t size, unsigned int iterations, ve
 
 		long long inputDataSize = inputData.size() / inputIds.size();
 		
-		int inputOffset = (index % inputDataSize) * inputIds.size();
-		int outputOffset = (index / inputDataSize) * outputIds.size();
+		int inputOffset = (int)((index % inputDataSize) * inputIds.size());
+		int outputOffset = (int)((index / inputDataSize) * outputIds.size());
 
-		for (int i = 0; i < inputIds.size(); i++)
+		for (unsigned int i = 0; i < inputIds.size(); i++)
 		{
 			entities[inputIds[i]].maxThroughput *= inputData[inputOffset + i];
 		}
 
-		for (int i = 0; i < outputIds.size(); i++)
+		for (unsigned int i = 0; i < outputIds.size(); i++)
 		{
 			entities[outputIds[i]].maxThroughput *= outputData[outputOffset + i];
 		}
@@ -379,12 +379,12 @@ void testThroughput(BeltEntity* source, size_t size, unsigned int iterations, ve
 		float maxInput = 0;
 		float maxOutput = 0;
 
-		for (int i = 0; i < inputIds.size(); i++)
+		for (unsigned int i = 0; i < inputIds.size(); i++)
 		{
 			maxInput += entities[inputIds[i]].maxThroughput;
 		}
 
-		for (int i = 0; i < outputIds.size(); i++)
+		for (unsigned int i = 0; i < outputIds.size(); i++)
 		{
 			maxOutput += entities[outputIds[i]].maxThroughput;
 		}
@@ -393,7 +393,7 @@ void testThroughput(BeltEntity* source, size_t size, unsigned int iterations, ve
 
 		float actualOutput = 0;
 
-		for (int i = 0; i < outputIds.size(); i++)
+		for (unsigned int i = 0; i < outputIds.size(); i++)
 		{
 			actualOutput += entities[outputIds[i]].lastThroughput;
 		}
@@ -409,7 +409,7 @@ void testRandomThroughput(BeltEntity* source, size_t size, unsigned int iteratio
 {
 	vector<int> inputIds;
 	vector<int> outputIds;
-	for (int i = 0; i < size; i++)
+	for (unsigned int i = 0; i < size; i++)
 	{
 		if (source[i].type == TYPE_SPAWN)
 		{
@@ -475,12 +475,12 @@ string formatSeconds(long sec)
 bool checkCorrectlyOrderedSplitterCombinations(int c, const vector<int>& mergedIds)
 {
 	vector<int> combinations;
-	for (int i = 0; i < mergedIds.size(); i++)
+	for (unsigned int i = 0; i < mergedIds.size(); i++)
 	{
 		combinations.push_back(c & 1);
 		c = c >> 1;
 	}
-	for (int i = 0; i < mergedIds.size(); i++)
+	for (unsigned int i = 0; i < mergedIds.size(); i++)
 	{
 		if (combinations[i] == 0 || mergedIds[i] == -1)
 		{
@@ -498,7 +498,7 @@ double testThroughputCombinationsOnCPU(BeltEntity* entities, size_t size, unsign
 {
 	vector<int> inputIds;
 	vector<int> outputIds;
-	for (int i = 0; i < size; i++)
+	for (unsigned int i = 0; i < size; i++)
 	{
 		if (entities[i].type == TYPE_SPAWN)
 		{
@@ -547,7 +547,7 @@ double testThroughputCombinationsOnCPU(BeltEntity* entities, size_t size, unsign
 	{
 		mergedWithOut.push_back(-1);
 	}
-	for (int i = 0; i < size; i++)
+	for (unsigned int i = 0; i < size; i++)
 	{
 		if (entities[i].type == TYPE_LEFT_SPLITTER &&
 			entities[i].next != -1 &&
@@ -622,7 +622,7 @@ double testThroughputCombinationsOnCPU(BeltEntity* entities, size_t size, unsign
 
 	long long testCases = outputCombinationsSize * inputCombinationsSize;
 	
-	threadCount = MIN(threadCount, testCases);
+	threadCount = (threadCount < testCases) ? threadCount : (int)testCases;
 	
 	thread** threads = new thread*[threadCount];
 	long long* progress = new long long[threadCount];
@@ -658,7 +658,7 @@ double testThroughputCombinationsOnCPU(BeltEntity* entities, size_t size, unsign
 			end = clock();
 			double progPercent = prog / (double)testCases;
 			double elapsed = ((end - start) / (double)CLOCKS_PER_SEC);
-			long estimatedSeconds = elapsed / progPercent - elapsed;
+			long estimatedSeconds = (long) (elapsed / progPercent - elapsed);
 			double p = round(progPercent * 1000) / 10;
 			stringstream ss;
 			ss << "Progress: " << p << ((p - ((int)p) == 0) ? ".0%" : "%") << ((p < 10) ? "  " : " ") << "| estimated time left: " << formatSeconds(estimatedSeconds) << "                ";
@@ -678,7 +678,7 @@ double testThroughputCombinationsOnCPU(BeltEntity* entities, size_t size, unsign
 
 	double minimum = 69;
 	
-	for (int i = 0; i < result.size(); i++)
+	for (unsigned int i = 0; i < result.size(); i++)
 	{
 		if (result[i] < minimum)
 		{
@@ -693,7 +693,7 @@ double testThroughputCombinationsLocally(BeltEntity* entities, size_t size, unsi
 {
 	vector<int> inputIds;
 	vector<int> outputIds;
-	for (int i = 0; i < size; i++)
+	for (unsigned int i = 0; i < size; i++)
 	{
 		if (entities[i].type == TYPE_SPAWN)
 		{
@@ -752,7 +752,7 @@ double testThroughputCombinationsLocally(BeltEntity* entities, size_t size, unsi
 
 		long long testCases = outputCombinationsSize * inputCombinationsSize;
 
-		int actualThreadCount = MIN(threadCount, testCases);
+		int actualThreadCount = (threadCount < testCases) ? threadCount : (int)testCases;
 
 		thread** threads = new thread*[actualThreadCount];
 		long long* progress = new long long[actualThreadCount];
@@ -802,7 +802,7 @@ double testThroughputCombinationsLocally(BeltEntity* entities, size_t size, unsi
 		delete[] threads;
 		delete[] progress;
 
-		for (int i = 0; i < result.size(); i++)
+		for (unsigned int i = 0; i < result.size(); i++)
 		{
 			if (result[i] < minimum)
 			{
@@ -912,7 +912,7 @@ int updateOnCPU(BeltEntity* entities, size_t size, unsigned int iterations)
 {
 	for (unsigned int j = 0; j < iterations; j++)
 	{
-		for (int i = 1; i < size; i++)
+		for (unsigned int i = 1; i < size; i++)
 		{
 			BeltEntity* b = entities + i;
 			float ldemand = 0;
@@ -1002,7 +1002,7 @@ int updateOnCPU(BeltEntity* entities, size_t size, unsigned int iterations)
 			}
 		}
 
-		for (int i = 1; i < size; i++)
+		for (unsigned int i = 1; i < size; i++)
 		{
 			BeltEntity* b = entities + i;
 			b->buffer += b->addToBuffer - b->subtractFromBuffer;
@@ -1020,7 +1020,7 @@ int updateOnCPUSorted(BeltEntity* entities, size_t size, unsigned int iterations
 	int beltLastIndex = 0;
 	int leftSplitterLastIndex = 0;
 
-	for (int i = 1; i < size; i++)
+	for (unsigned int i = 1; i < size; i++)
 	{
 		BeltEntity* b = entities + i;
 		if (b->type > TYPE_SPAWN && spawnBeltLastIndex == 0)
@@ -1129,7 +1129,7 @@ int updateOnCPUSorted(BeltEntity* entities, size_t size, unsigned int iterations
 				}
 			}
 
-			for (int i = spawnBeltLastIndex + 1; i < size; i++)
+			for (unsigned int i = spawnBeltLastIndex + 1; i < size; i++)
 			{
 				BeltEntity* b = entities + i;
 				b->buffer += b->addToBuffer - b->subtractFromBuffer;
@@ -1159,7 +1159,7 @@ int updateOnCPU(BeltEntity* entities, size_t size, unsigned int iterations, doub
 
 	int iterationCount = 0;
 
-	for (int i = 0; i < size; i++)
+	for (unsigned int i = 0; i < size; i++)
 	{
 		if (entities[i].type == TYPE_SPAWN)
 		{
@@ -1180,11 +1180,11 @@ int updateOnCPU(BeltEntity* entities, size_t size, unsigned int iterations, doub
 		iterationCount += iterations;
 		troughputDifference = 0;
 
-		for (int i = 0; i < spawnBelts.size(); i++)
+		for (unsigned int i = 0; i < spawnBelts.size(); i++)
 		{
 			troughputDifference += spawnBelts[i]->lastThroughput;
 		}
-		for (int i = 0; i < voidBelts.size(); i++)
+		for (unsigned int i = 0; i < voidBelts.size(); i++)
 		{
 			troughputDifference -= voidBelts[i]->lastThroughput;
 		}
