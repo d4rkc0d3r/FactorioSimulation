@@ -602,7 +602,7 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 	}
 	for (int i = 0; i < output.size(); i++)
 	{
-		if (output[i].type == TYPE_BELT && hasPrevious.find(i) == hasPrevious.end())
+		if ((output[i].type == TYPE_BELT || output[i].type == TYPE_UNDERGROUND_ENTRANCE) && hasPrevious.find(i) == hasPrevious.end())
 		{
 			output[i].type = TYPE_SPAWN;
 		}
