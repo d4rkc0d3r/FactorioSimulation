@@ -492,6 +492,8 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 	cout << endl;
 #endif
 
+	int longestUndergroundDistance = 0;
+
 	// set the correct next id and set void belts
 	for (int i = 0; i < listWithDualSplitter.size(); i++)
 	{
@@ -531,6 +533,7 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 				if (listWithDualSplitter[id].direction == e.direction)
 				{
 					b.next = id;
+					longestUndergroundDistance = (longestUndergroundDistance > i - 1) ? longestUndergroundDistance : i - 1;
 					break;
 				}
 			}
@@ -667,6 +670,8 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 		}
 		cout << "Loading a " << inputBeltCount << " to " << outputBeltCount << " balancer with dimensions ";
 		cout << (1 + maxx - minx) << "x" << (1 + maxy - miny) << " and " << splitterCount << " splitters" << endl;
+		if (longestUndergroundDistance > 4)
+			cout << "Longest underground belt distance is " << longestUndergroundDistance << " tiles" << endl;
 	}
 
 	if (optimize)
