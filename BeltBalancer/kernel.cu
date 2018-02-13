@@ -21,7 +21,8 @@ using namespace std;
 
 void printAndMoveCursorBack(string str)
 {
-	// not implemented for linux
+	printf("\33[2K\r");
+	printf(str);
 }
 
 #elif defined(_WIN32) || defined(WIN32)
