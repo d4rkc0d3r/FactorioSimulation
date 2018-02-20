@@ -141,7 +141,12 @@ vector<BPEntity> parseVanillaJSON(string jsonString)
 	{
 		JSONObject* j = entities->at(i);
 		BPEntity e;
-		e.name = j->GetString("name") + ((j->Get("type") != nullptr) ? "-" + j->GetString("type") : "");
+		string type = "";
+		if (j->Get("type") != nullptr && j->GetString("name").find("underground") != string::npos)
+		{
+			type = "-" + j->GetString("type");
+		}
+		e.name = j->GetString("name") + type;
 		e.direction = (j->Get("direction") != nullptr) ? j->GetNumber("direction") : 0;
 		e.x = j->Get("position")->GetNumber("x");
 		e.y = j->Get("position")->GetNumber("y");
