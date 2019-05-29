@@ -551,8 +551,9 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 				int nd = listWithDualSplitter[b.next].direction;
 				if ((8 + nd - e.direction) % 4 == 2)
 				{
-					cerr << "[Warning] Detected sideload on underground belt" << endl;
+					cerr << "[Error] Detected sideload on underground belt" << endl;
 					// side loading on underground belt exit is bad!
+					return nullptr;
 				}
 				if ((nd == e.direction && output[b.next].type == TYPE_UNDERGROUND_EXIT) || ((8 + nd - e.direction) % 8 == 4 && output[b.next].type == TYPE_UNDERGROUND_ENTRANCE))
 				{
