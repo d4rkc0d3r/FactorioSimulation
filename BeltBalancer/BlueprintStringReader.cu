@@ -637,6 +637,25 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 		}
 	}
 
+	if (optimize)
+	{
+		// replace underground belt entrance and exit with one belt piece
+		for (unsigned int i = 0; i < output.size(); i++)
+		{
+			BeltEntity& o = output[i];
+			if (o.type == TYPE_UNDERGROUND_ENTRANCE && o.next != -1 && output[o.next].type == TYPE_UNDERGROUND_EXIT)
+			{
+				output[o.next].type = TYPE_PLS_DELETE;
+				o.type = TYPE_BELT;
+				o.next = output[o.next].next;
+				if (o.next == -1)
+				{
+					o.type = TYPE_VOID;
+				}
+			}
+		}
+	}
+
 	// find dimensions without counting spawn and void belts
 	{
 		int minx = width;
@@ -682,22 +701,6 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 
 	if (optimize)
 	{
-		// replace underground belt entrance and exit with one belt piece
-		for (unsigned int i = 0; i < output.size(); i++)
-		{
-			BeltEntity& o = output[i];
-			if (o.type == TYPE_UNDERGROUND_ENTRANCE && o.next != -1 && output[o.next].type == TYPE_UNDERGROUND_EXIT)
-			{
-				output[o.next].type = TYPE_PLS_DELETE;
-				o.type = TYPE_BELT;
-				o.next = output[o.next].next;
-				if (o.next == -1)
-				{
-					o.type = TYPE_VOID;
-				}
-			}
-		}
-
 		// bridge over belts with same throughput
 		bool didSomethingChange = false;
 		do
