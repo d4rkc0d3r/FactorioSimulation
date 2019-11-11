@@ -21,7 +21,58 @@ using namespace std;
 
 void printAndMoveCursorBack(string str)
 {
-	// not implemented for linux
+	printf("\33[2K\r");
+	printf("%s", str.c_str());
+}
+
+#include <X11/Xlib.h>
+int XA_STRING = 31;
+
+char * XPasteType(Atom atom, Display *display, Window window, Atom UTF8) {
+	XEvent event;
+	int format;
+	unsigned long N, size;
+	char * data, * s = 0;
+	Atom target,
+		CLIPBOARD = XInternAtom(display, "CLIPBOARD", 0),
+		XSEL_DATA = XInternAtom(display, "XSEL_DATA", 0);
+	XConvertSelection(display, CLIPBOARD, atom, XSEL_DATA, window, CurrentTime);
+	XSync(display, 0);
+	XNextEvent(display, &event);
+	
+	switch(event.type) {
+		case SelectionNotify:
+		if(event.xselection.selection != CLIPBOARD) break;
+		if(event.xselection.property) {
+			XGetWindowProperty(event.xselection.display, event.xselection.requestor,
+				event.xselection.property, 0L,(~0L), 0, AnyPropertyType, &target,
+				&format, &size, &N,(unsigned char**)&data);
+			if(target == UTF8 || target == XA_STRING) {
+				s = strndup(data, size);
+				XFree(data);
+			}
+			XDeleteProperty(event.xselection.display, event.xselection.requestor, event.xselection.property);
+		}
+	}
+  return s;
+}
+
+char *XPaste(Display *display, Window window) {
+	char * c = 0;
+    Atom UTF8 = XInternAtom(display, "UTF8_STRING", True);
+	if(UTF8 != None) c = XPasteType(UTF8, display, window, UTF8);
+	if(!c) c = XPasteType(XA_STRING, display, window, UTF8);
+	return c;
+}
+
+string getClipboard()
+{
+	Display *display = XOpenDisplay(0);
+	int N = DefaultScreen(display);
+	Window window = XCreateSimpleWindow(display, RootWindow(display, N), 0, 0, 1, 1, 0,
+		BlackPixel(display, N), WhitePixel(display, N)
+	);	
+	return XPaste(display, window);
 }
 
 #elif defined(_WIN32) || defined(WIN32)
@@ -37,6 +88,28 @@ void printAndMoveCursorBack(string str)
 	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &nfo);
 	pos.Y = nfo.dwCursorPosition.Y;
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), pos);
+}
+
+string getClipboard()
+{
+	if (!OpenClipboard(nullptr))
+	{
+		return "";
+	}
+	HANDLE hData = GetClipboardData(CF_TEXT);
+	if (hData == nullptr)
+	{
+		return "";
+	}
+	char * pszText = static_cast<char*>(GlobalLock(hData));
+	if (pszText == nullptr)
+	{
+		return "";
+	}
+	string text(pszText);
+	GlobalUnlock(hData);
+	CloseClipboard();
+	return text;
 }
 
 #endif
@@ -124,28 +197,6 @@ void displayEntities(BeltEntity* entities, size_t size)
 			cout << "(" << t << ", " << entities[i].buffer << ", " << entities[i].lastThroughput << ", " << i - 1 << ", " << entities[i].next << ")" << endl;
 	}
 	cout << endl;
-}
-
-string getClipboard()
-{
-	if (!OpenClipboard(nullptr))
-	{
-		return "";
-	}
-	HANDLE hData = GetClipboardData(CF_TEXT);
-	if (hData == nullptr)
-	{
-		return "";
-	}
-	char * pszText = static_cast<char*>(GlobalLock(hData));
-	if (pszText == nullptr)
-	{
-		return "";
-	}
-	string text(pszText);
-	GlobalUnlock(hData);
-	CloseClipboard();
-	return text;
 }
 
 string loadBlueprintFile(string fileName)
