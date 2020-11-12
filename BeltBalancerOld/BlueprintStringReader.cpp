@@ -1,4 +1,4 @@
-#include "BlueprintStringReader.cuh"
+#include "BlueprintStringReader.hpp"
 
 #include <vector>
 #include "base64.h"
@@ -137,7 +137,7 @@ vector<BPEntity> parseVanillaJSON(string jsonString)
 #endif // _DEBUG
 	vector<JSONObject*>* entities = json->GetPath("blueprint.entities")->GetArray();
 
-	for (int i = 0; i < entities->size(); i++)
+	for (size_t i = 0; i < entities->size(); i++)
 	{
 		JSONObject* j = entities->at(i);
 		BPEntity e;
@@ -147,7 +147,7 @@ vector<BPEntity> parseVanillaJSON(string jsonString)
 			type = "-" + j->GetString("type");
 		}
 		e.name = j->GetString("name") + type;
-		e.direction = (j->Get("direction") != nullptr) ? j->GetNumber("direction") : 0;
+		e.direction = (j->Get("direction") != nullptr) ? (int)j->GetNumber("direction") : 0;
 		e.x = j->Get("position")->GetNumber("x");
 		e.y = j->Get("position")->GetNumber("y");
 		out.push_back(e);
@@ -398,7 +398,7 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 	vector<BPEntity> listWithDualSplitter;
 
 	// make new list with two separate entities per splitter
-	for (int i = 0; i < entities.size(); i++)
+	for (size_t i = 0; i < entities.size(); i++)
 	{
 		if (entities[i].name.find("splitter") != string::npos)
 		{
@@ -442,7 +442,7 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 #endif
 
 	// initialize actual belt entity vector and the position to id map
-	for (int i = 0; i < listWithDualSplitter.size(); i++)
+	for (size_t i = 0; i < listWithDualSplitter.size(); i++)
 	{
 		BPEntity e = listWithDualSplitter[i];
 
@@ -450,18 +450,18 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 		b.type = TYPE_BELT;
 		b.otherSplitterPart = -1;
 		b.next = -1;
-		b.maxThroughput = 1.0 / 3;
+		b.maxThroughput = 1.0f / 3;
 		b.buffer = 0;
 		b.addToBuffer = 0;
 		b.subtractFromBuffer = 0;
 
 		if (e.name.find("fast") != string::npos)
 		{
-			b.maxThroughput = 2.0 / 3;
+			b.maxThroughput = 2.0f / 3;
 		}
 		else if (e.name.find("express") != string::npos)
 		{
-			b.maxThroughput = 1.0;
+			b.maxThroughput = 1.0f;
 		}
 
 		beltIdMap[(int)round(e.x)][(int)round(e.y)] = i;
@@ -500,7 +500,7 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 	int longestUndergroundDistance = 0;
 
 	// set the correct next id and set void belts
-	for (int i = 0; i < listWithDualSplitter.size(); i++)
+	for (size_t i = 0; i < listWithDualSplitter.size(); i++)
 	{
 		BPEntity& e = listWithDualSplitter[i];
 		int x = (int)round(e.x);
@@ -579,7 +579,7 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 	}
 
 	// detecting output splitter
-	for (int i = 0; i < output.size(); i++)
+	for (size_t i = 0; i < output.size(); i++)
 	{
 		if (output[i].type == TYPE_LEFT_SPLITTER && output[output[i].otherSplitterPart].next == -1 && output[i].next == -1)
 		{
@@ -609,14 +609,14 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 	{
 		hasPrevious.insert(b.next);
 	}
-	for (int i = 0; i < output.size(); i++)
+	for (size_t i = 0; i < output.size(); i++)
 	{
 		if ((output[i].type == TYPE_BELT || output[i].type == TYPE_UNDERGROUND_ENTRANCE) && hasPrevious.find(i) == hasPrevious.end())
 		{
 			output[i].type = TYPE_SPAWN;
 		}
 	}
-	for (int i = 0; i < output.size(); i++)
+	for (size_t i = 0; i < output.size(); i++)
 	{
 		if (output[i].type == TYPE_LEFT_SPLITTER && hasPrevious.find(i) == hasPrevious.end() && hasPrevious.find(output[i].otherSplitterPart) == hasPrevious.end())
 		{

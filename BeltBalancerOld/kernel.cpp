@@ -1,11 +1,8 @@
 
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
-
 #include <stdio.h>
 
-#include "BeltEntity.cuh"
-#include "BlueprintStringReader.cuh"
+#include "BeltEntity.hpp"
+#include "BlueprintStringReader.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -62,27 +59,20 @@ int maxIterations = 0;
 int updateEntities(BeltEntity* entities, size_t size, unsigned int iterations)
 {
 	int iter;
-	if (useCPU)
+	if (adaptiveIterationCount)
 	{
-		if (adaptiveIterationCount)
+		if (isSorted)
 		{
-			if (isSorted)
-			{
-				iter = updateOnCPUSorted(entities, size, iterations, 0.0001);
-			}
-			else
-			{
-				iter = updateOnCPU(entities, size, iterations, 0.0001);
-			}
+			iter = updateOnCPUSorted(entities, size, iterations, 0.0001);
 		}
 		else
 		{
-			iter = updateOnCPU(entities, size, iterations);
+			iter = updateOnCPU(entities, size, iterations, 0.0001);
 		}
 	}
 	else
 	{
-		iter = updateOnGPU(entities, size, iterations, threads);
+		iter = updateOnCPU(entities, size, iterations);
 	}
 	minIterations = min(minIterations, iter);
 	maxIterations = max(maxIterations, iter);
@@ -164,14 +154,6 @@ string loadBlueprintFile(string fileName)
 	ss << t.rdbuf();
 	t.close();
 	output = ss.str();
-	if (output == "")
-	{
-		ss.clear();
-		t.open(getenv("APPDATA") + string("\\factorio\\script-output\\blueprint-string\\") + fileName);
-		ss << t.rdbuf();
-		t.close();
-		output = ss.str();
-	}
 	return output;
 }
 
@@ -460,13 +442,6 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 		cout << "Min Throughput with all combinations: " << minThroughput << "%" << endl;
 	}
 
-	if (testAllThroughputCombinationsGPU)
-	{
-		double minThroughput = round(testThroughputCombinationsOnGPU(entities, size, iterations, (spawnBelts.size() + voidBelts.size() <= 16) ? 1 : 2, 16) * 1000) / 10;
-
-		cout << "Min Throughput with all combinations: " << minThroughput << "%" << endl;
-	}
-
 	if (testRandomThroughputCombinations)
 	{
 		testThroughputCombinationsRandomly(entities, size, iterations, cpuThreads);
@@ -538,8 +513,6 @@ void printHelp()
 
 int main(int argc, char** argv)
 {
-	cudaError_t cudaStatus;
-
 	int iterations = -1;
 	string file = "CLIPBOARD";
 	int cudaDeviceId = -1;
@@ -659,17 +632,6 @@ int main(int argc, char** argv)
 		return 0;
 	}
 
-	if (cudaDeviceId != -1)
-	{
-		// Choose which GPU to run on
-		cudaStatus = cudaSetDevice(cudaDeviceId);
-		if (cudaStatus != cudaSuccess)
-		{
-			cerr << "cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?" << endl;
-			return 1;
-		}
-	}
-
 	string fileContent = loadBlueprintFile(file);
 	if (fileContent.empty())
 	{
@@ -735,15 +697,6 @@ int main(int argc, char** argv)
 	
 
 	delete[] belts;
-
-	if (!useCPU)
-	{
-		cudaStatus = cudaDeviceReset();
-		if (cudaStatus != cudaSuccess) {
-			fprintf(stderr, "cudaDeviceReset failed!");
-			return 1;
-		}
-	}
 
     return 0;
 }
