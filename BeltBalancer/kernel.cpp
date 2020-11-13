@@ -326,34 +326,38 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 
 		double maxInput = 0;
 		double maxOutput = 0;
+		double actualOutput = 0;
+
+		float minSpawn = 9999;
+		float maxSpawn = 0;
+		float minVoid = 9999;
+		float maxVoid = 0;
 
 		for (unsigned int i = 0; i < size; i++)
 		{
 			if (entities[i].type == TYPE_SPAWN)
 			{
 				maxInput += entities[i].spawnAmount;
+				minSpawn = min(minSpawn, workingCopy[i].lastThroughput);
+				maxSpawn = max(maxSpawn, workingCopy[i].lastThroughput);
 			}
 			else if (entities[i].type == TYPE_VOID)
 			{
 				maxOutput += entities[i].voidAmount;
-			}
-		}
-
-		maxOutput = min(maxInput, maxOutput);
-
-		double actualOutput = 0;
-
-		for (unsigned int i = 0; i < size; i++)
-		{
-			if (workingCopy[i].type == TYPE_VOID)
-			{
 				actualOutput += workingCopy[i].lastThroughput;
+				minVoid = min(minVoid, workingCopy[i].lastThroughput);
+				maxVoid = max(maxVoid, workingCopy[i].lastThroughput);
 			}
 		}
 
-		double ThroughputPercentage = (round(actualOutput / maxOutput * 1000)) / 10.0;
+		double throughputPercentage = (round(actualOutput / min(maxInput, maxOutput) * 1000)) / 10.0;
 
-		cout << "Throughput under full load: " << ThroughputPercentage << "%" << endl;
+		cout << "Throughput under full load: " << throughputPercentage << "%" << endl;
+
+		float inBalance = (round(minSpawn / maxSpawn * 1000)) / 10.0f;
+		float outBalance = (round(minVoid / maxVoid * 1000)) / 10.0f;
+
+		cout << "In/Out Balance under full load: " << inBalance << "% | " << outBalance << "%" << endl;
 	}
 
 	if (testAllTwoBeltThroughputCombinations)
