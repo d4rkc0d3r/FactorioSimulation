@@ -60,11 +60,11 @@ int updateEntities(BeltEntity* entities, size_t size, unsigned int iterations)
 	{
 		if (isSorted)
 		{
-			iter = updateOnCPUSorted(entities, size, iterations, 0.0001);
+			iter = updateOnCPUSorted(entities, size, iterations, 0.001);
 		}
 		else
 		{
-			iter = updateOnCPU(entities, size, iterations, 0.0001);
+			iter = updateOnCPU(entities, size, iterations, 0.001);
 		}
 	}
 	else
@@ -441,7 +441,7 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 		else
 		{
 			int minPopCount = (spawnBelts.size() + voidBelts.size() <= 16) ? 1 : 2;
-			int maxPopCount = 16;
+			int maxPopCount = (int)ceil(0.5 * max(spawnBelts.size(), voidBelts.size()));
 			double minThroughput = round(testThroughputCombinationsOnCPU(entities, size, iterations, minPopCount, maxPopCount, cpuThreads, printProgress) * 1000) / 10;
 
 			cout << "Min Throughput with all combinations: " << minThroughput << "%" << endl;
