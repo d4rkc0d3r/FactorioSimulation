@@ -434,9 +434,18 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 
 	if (testAllThroughputCombinationsCPU)
 	{
-		double minThroughput = round(testThroughputCombinationsOnCPU(entities, size, iterations, (spawnBelts.size() + voidBelts.size() <= 16) ? 1 : 2, 16, cpuThreads, printProgress) * 1000) / 10;
+		if (spawnBelts.size() > 30 || voidBelts.size() > 30)
+		{
+			cout << "-tall can not test such a large balancer, use -tlocal or -trandom instead" << endl;
+		}
+		else
+		{
+			int minPopCount = (spawnBelts.size() + voidBelts.size() <= 16) ? 1 : 2;
+			int maxPopCount = 16;
+			double minThroughput = round(testThroughputCombinationsOnCPU(entities, size, iterations, minPopCount, maxPopCount, cpuThreads, printProgress) * 1000) / 10;
 
-		cout << "Min Throughput with all combinations: " << minThroughput << "%" << endl;
+			cout << "Min Throughput with all combinations: " << minThroughput << "%" << endl;
+		}
 	}
 
 	if (testRandomThroughputCombinations)
