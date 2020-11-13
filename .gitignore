@@ -5,6 +5,7 @@
 *.sdf
 *.csproj
 *.vcxproj
+*.vcxproj.filters
 *.user
 */lib/*
 Debug/*
@@ -15,6 +16,7 @@ x64/*
 */Debug/*
 */Release/*
 */x64/*
+.vs/*
 
 # Windows image file caches
 Thumbs.db

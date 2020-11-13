@@ -1,9 +1,8 @@
 #ifndef BELTENTITY_H
 #define BELTENTITY_H
 
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
 #include <string>
+#include <vector>
 
 #define TYPE_BLOCK 0
 #define TYPE_SPAWN 1
@@ -33,13 +32,14 @@ struct BeltEntity
 	int otherSplitterPart;
 };
 
+//void testThroughput(BeltEntity* source, size_t size, unsigned int iterations, std::vector<int>& inputIds, std::vector<int>& outputIds,
+//	long long startIndex, long long endIndex, std::vector<float>& inputData, std::vector<float>& outputData, float* results, long long* progress);
+
 // result is minimum throughput
-double testThroughputCombinationsOnGPU(BeltEntity* entities, size_t size, unsigned int iterations, int minPopCount, int maxPopCount);
 double testThroughputCombinationsOnCPU(BeltEntity* entities, size_t size, unsigned int iterations, int minPopCount, int maxPopCount, int threadCount, bool printProgress);
 double testThroughputCombinationsLocally(BeltEntity* entities, size_t size, unsigned int iterations, int threadCount, bool printProgress);
 double testThroughputCombinationsRandomly(BeltEntity* entities, size_t size, unsigned int iterations, int threadCount);
 
-int updateOnGPU(BeltEntity* entities, size_t size, unsigned int iterations, int threads);
 int updateOnCPU(BeltEntity* entities, size_t size, unsigned int iterations);
 int updateOnCPU(BeltEntity* entities, size_t size, unsigned int iterations, double throughputThresholdToFinish);
 int updateOnCPUSorted(BeltEntity* entities, size_t size, unsigned int iterations, double throughputThresholdToFinish);
