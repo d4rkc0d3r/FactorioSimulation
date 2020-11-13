@@ -459,7 +459,7 @@ void sortEntities(BeltEntity* entities, size_t size)
 		newId[i] = 0;
 	}
 	unsigned int currentIndex = 0;
-	for (unsigned int typeId = 0; typeId <= TYPE_RIGHT_SPLITTER; typeId++)
+	for (unsigned int typeId = 0; typeId < TYPE_LEFT_SPLITTER; typeId++)
 	{
 		for (unsigned int i = 0; i < size; i++)
 		{
@@ -469,6 +469,17 @@ void sortEntities(BeltEntity* entities, size_t size)
 				newId[i] = currentIndex - 1;
 				currentIndex++;
 			}
+		}
+	}
+	for (unsigned int i = 0; i < size; i++)
+	{
+		if (entities[i].type == TYPE_LEFT_SPLITTER)
+		{
+			sortedEntities[currentIndex] = entities[i];
+			newId[i] = currentIndex - 1;
+			sortedEntities[currentIndex + 1] = entities[entities[i].otherSplitterPart + 1];
+			newId[entities[i].otherSplitterPart + 1] = currentIndex;
+			currentIndex += 2;
 		}
 	}
 	for (unsigned int i = 0; i < size; i++)

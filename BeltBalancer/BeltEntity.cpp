@@ -653,7 +653,6 @@ int updateOnCPUSorted(BeltEntity* entities, size_t size, unsigned int iterations
 	int spawnBeltLastIndex = 0;
 	int voidBeltLastIndex = 0;
 	int beltLastIndex = 0;
-	int leftSplitterLastIndex = 0;
 
 	for (unsigned int i = 1; i < size; i++)
 	{
@@ -669,10 +668,6 @@ int updateOnCPUSorted(BeltEntity* entities, size_t size, unsigned int iterations
 		if (b->type > TYPE_UNDERGROUND_EXIT && beltLastIndex == 0)
 		{
 			beltLastIndex = i - 1;
-		}
-		if (b->type > TYPE_LEFT_SPLITTER && leftSplitterLastIndex == 0)
-		{
-			leftSplitterLastIndex = i - 1;
 			break;
 		}
 	}
@@ -694,7 +689,7 @@ int updateOnCPUSorted(BeltEntity* entities, size_t size, unsigned int iterations
 			BeltEntity* b = entities + i;
 			b->subtractFromBuffer = minss(b->buffer, b->voidAmount);
 		}
-
+		
 		for (int i = voidBeltLastIndex + 1; i <= beltLastIndex; i++)
 		{
 			BeltEntity* b = entities + i;
@@ -704,10 +699,10 @@ int updateOnCPUSorted(BeltEntity* entities, size_t size, unsigned int iterations
 			b->subtractFromBuffer = next->addToBuffer;
 		}
 
-		for (int i = beltLastIndex + 1; i <= leftSplitterLastIndex; i++)
+		for (int i = beltLastIndex + 1; i < size; i+=2)
 		{
 			BeltEntity* b = entities + i;
-			BeltEntity* r = entities + b->otherSplitterPart + 1;
+			BeltEntity* r = entities + i + 1;
 			BeltEntity* lnext = entities + b->next + 1;
 			BeltEntity* rnext = entities + r->next + 1;
 			float ldemand = minss(lnext->maxThroughput, b->maxThroughput);
