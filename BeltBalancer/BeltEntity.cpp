@@ -164,19 +164,13 @@ string formatSeconds(long sec)
 
 bool checkCorrectlyOrderedSplitterCombinations(int c, const vector<int>& mergedIds)
 {
-	vector<int> combinations;
-	for (unsigned int i = 0; i < mergedIds.size(); i++)
+	for (size_t i = 0; i < mergedIds.size(); i++)
 	{
-		combinations.push_back(c & 1);
-		c = c >> 1;
-	}
-	for (unsigned int i = 0; i < mergedIds.size(); i++)
-	{
-		if (combinations[i] == 0 || mergedIds[i] == -1)
+		if (((c >> i) & 1) == 0 || mergedIds[i] == -1)
 		{
 			continue;
 		}
-		if (combinations[mergedIds[i]] == 0)
+		if (((c >> mergedIds[i]) & 1) == 0)
 		{
 			return false;
 		}
@@ -687,97 +681,94 @@ int updateOnCPUSorted(BeltEntity* entities, size_t size, unsigned int iterations
 
 	do
 	{
-		for (unsigned int j = 0; j < iterations; j++)
+		for (int i = 1; i <= spawnBeltLastIndex; i++)
 		{
-			for (int i = 1; i <= spawnBeltLastIndex; i++)
-			{
-				BeltEntity* b = entities + i;
-				BeltEntity* next = entities + b->next + 1;
-				next->addToBuffer = minss(b->spawnAmount, next->maxThroughput + next->maxThroughput - next->buffer);
-				b->lastThroughput = next->addToBuffer;
-			}
+			BeltEntity* b = entities + i;
+			BeltEntity* next = entities + b->next + 1;
+			next->addToBuffer = minss(b->spawnAmount, next->maxThroughput + next->maxThroughput - next->buffer);
+			b->lastThroughput = next->addToBuffer;
+		}
 
-			for (int i = spawnBeltLastIndex + 1; i <= voidBeltLastIndex; i++)
-			{
-				BeltEntity* b = entities + i;
-				b->subtractFromBuffer = minss(b->buffer, b->voidAmount);
-			}
+		for (int i = spawnBeltLastIndex + 1; i <= voidBeltLastIndex; i++)
+		{
+			BeltEntity* b = entities + i;
+			b->subtractFromBuffer = minss(b->buffer, b->voidAmount);
+		}
 
-			for (int i = voidBeltLastIndex + 1; i <= beltLastIndex; i++)
-			{
-				BeltEntity* b = entities + i;
-				BeltEntity* next = entities + b->next + 1;
-				next->addToBuffer = minss(b->maxThroughput, b->buffer);
-				next->addToBuffer = minss(next->addToBuffer, next->maxThroughput + next->maxThroughput - next->buffer);
-				b->subtractFromBuffer = next->addToBuffer;
-			}
+		for (int i = voidBeltLastIndex + 1; i <= beltLastIndex; i++)
+		{
+			BeltEntity* b = entities + i;
+			BeltEntity* next = entities + b->next + 1;
+			next->addToBuffer = minss(b->maxThroughput, b->buffer);
+			next->addToBuffer = minss(next->addToBuffer, next->maxThroughput + next->maxThroughput - next->buffer);
+			b->subtractFromBuffer = next->addToBuffer;
+		}
 
-			for (int i = beltLastIndex + 1; i <= leftSplitterLastIndex; i++)
+		for (int i = beltLastIndex + 1; i <= leftSplitterLastIndex; i++)
+		{
+			BeltEntity* b = entities + i;
+			BeltEntity* r = entities + b->otherSplitterPart + 1;
+			BeltEntity* lnext = entities + b->next + 1;
+			BeltEntity* rnext = entities + r->next + 1;
+			float ldemand = minss(lnext->maxThroughput, b->maxThroughput);
+			float rdemand = minss(rnext->maxThroughput, r->maxThroughput);
+			ldemand = minss(ldemand, lnext->maxThroughput + lnext->maxThroughput - lnext->buffer);
+			rdemand = minss(rdemand, rnext->maxThroughput + rnext->maxThroughput - rnext->buffer);
+			float lsupply = minss(b->maxThroughput, b->buffer);
+			float rsupply = minss(r->maxThroughput, r->buffer);
+			float demand = ldemand + rdemand;
+			float supply = lsupply + rsupply;
+			if (demand >= supply)
 			{
-				BeltEntity* b = entities + i;
-				BeltEntity* r = entities + b->otherSplitterPart + 1;
-				BeltEntity* lnext = entities + b->next + 1;
-				BeltEntity* rnext = entities + r->next + 1;
-				float ldemand = minss(lnext->maxThroughput, b->maxThroughput);
-				float rdemand = minss(rnext->maxThroughput, r->maxThroughput);
-				ldemand = minss(ldemand, lnext->maxThroughput + lnext->maxThroughput - lnext->buffer);
-				rdemand = minss(rdemand, rnext->maxThroughput + rnext->maxThroughput - rnext->buffer);
-				float lsupply = minss(b->maxThroughput, b->buffer);
-				float rsupply = minss(r->maxThroughput, r->buffer);
-				float demand = ldemand + rdemand;
-				float supply = lsupply + rsupply;
-				if (demand >= supply)
+				float halfSupply = supply / 2;
+				b->subtractFromBuffer = lsupply;
+				r->subtractFromBuffer = rsupply;
+				if (ldemand < halfSupply)
 				{
-					float halfSupply = supply / 2;
-					b->subtractFromBuffer = lsupply;
-					r->subtractFromBuffer = rsupply;
-					if (ldemand < halfSupply)
-					{
-						lnext->addToBuffer = ldemand;
-						rnext->addToBuffer = supply - ldemand;
-					}
-					else if (rdemand < halfSupply)
-					{
-						rnext->addToBuffer = rdemand;
-						lnext->addToBuffer = supply - rdemand;
-					}
-					else
-					{
-						lnext->addToBuffer = halfSupply;
-						rnext->addToBuffer = halfSupply;
-					}
+					lnext->addToBuffer = ldemand;
+					rnext->addToBuffer = supply - ldemand;
+				}
+				else if (rdemand < halfSupply)
+				{
+					rnext->addToBuffer = rdemand;
+					lnext->addToBuffer = supply - rdemand;
 				}
 				else
 				{
-					float halfDemand = demand / 2;
-					lnext->addToBuffer = ldemand;
-					rnext->addToBuffer = rdemand;
-					if (lsupply < halfDemand)
-					{
-						b->subtractFromBuffer = lsupply;
-						r->subtractFromBuffer = demand - lsupply;
-					}
-					else if (rsupply < halfDemand)
-					{
-						r->subtractFromBuffer = rsupply;
-						b->subtractFromBuffer = demand - rsupply;
-					}
-					else
-					{
-						r->subtractFromBuffer = halfDemand;
-						b->subtractFromBuffer = halfDemand;
-					}
+					lnext->addToBuffer = halfSupply;
+					rnext->addToBuffer = halfSupply;
 				}
 			}
-
-			for (unsigned int i = spawnBeltLastIndex + 1; i < size; i++)
+			else
 			{
-				BeltEntity* b = entities + i;
-				b->buffer += b->addToBuffer - b->subtractFromBuffer;
+				float halfDemand = demand / 2;
+				lnext->addToBuffer = ldemand;
+				rnext->addToBuffer = rdemand;
+				if (lsupply < halfDemand)
+				{
+					b->subtractFromBuffer = lsupply;
+					r->subtractFromBuffer = demand - lsupply;
+				}
+				else if (rsupply < halfDemand)
+				{
+					r->subtractFromBuffer = rsupply;
+					b->subtractFromBuffer = demand - rsupply;
+				}
+				else
+				{
+					r->subtractFromBuffer = halfDemand;
+					b->subtractFromBuffer = halfDemand;
+				}
 			}
 		}
 
-		iterationCount += iterations;
+		for (unsigned int i = spawnBeltLastIndex + 1; i < size; i++)
+		{
+			BeltEntity* b = entities + i;
+			b->buffer += b->addToBuffer - b->subtractFromBuffer;
+		}
+
+		iterationCount += 1;
 		troughputDifference = 0;
 
 		for (int i = 1; i <= spawnBeltLastIndex; i++)
@@ -788,7 +779,7 @@ int updateOnCPUSorted(BeltEntity* entities, size_t size, unsigned int iterations
 		{
 			troughputDifference -= entities[i].lastThroughput;
 		}
-	} while (abs(troughputDifference) > throughputThresholdToFinish);
+	} while (abs(troughputDifference) > throughputThresholdToFinish && iterationCount < iterations);
 
 	return iterationCount;
 }
@@ -816,9 +807,9 @@ int updateOnCPU(BeltEntity* entities, size_t size, unsigned int iterations, doub
 
 	do
 	{
-		updateOnCPU(entities, size, iterations);
+		updateOnCPU(entities, size, 1);
 
-		iterationCount += iterations;
+		iterationCount += 1;
 		troughputDifference = 0;
 
 		for (unsigned int i = 0; i < spawnBelts.size(); i++)
@@ -830,7 +821,7 @@ int updateOnCPU(BeltEntity* entities, size_t size, unsigned int iterations, doub
 			troughputDifference -= voidBelts[i]->lastThroughput;
 		}
 	}
-	while (abs(troughputDifference) > throughputThresholdToFinish);
+	while (abs(troughputDifference) > throughputThresholdToFinish && iterationCount < iterations);
 
 	return iterationCount;
 }

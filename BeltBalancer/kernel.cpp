@@ -40,7 +40,7 @@ void printAndMoveCursorBack(string str)
 
 bool useCPU = true;
 bool printProgress = true;
-bool adaptiveIterationCount = false;
+bool adaptiveIterationCount = true;
 bool isSorted = true;
 bool testInputBalance = true;
 bool testOuputBalance = true;
@@ -644,16 +644,8 @@ int main(int argc, char** argv)
 
 	if (iterations == -1)
 	{
-		if (adaptiveIterationCount)
-		{
-			iterations = 5;
-		}
-		else
-		{
-			iterations = size * 2;
-		}
+		iterations = size * 2;
 	}
-	
 
 	if (size == 0)
 	{
