@@ -32,9 +32,6 @@ struct BeltEntity
 	int otherSplitterPart;
 };
 
-//void testThroughput(BeltEntity* source, size_t size, unsigned int iterations, std::vector<int>& inputIds, std::vector<int>& outputIds,
-//	long long startIndex, long long endIndex, std::vector<float>& inputData, std::vector<float>& outputData, float* results, long long* progress);
-
 // result is minimum throughput
 double testThroughputCombinationsOnCPU(BeltEntity* entities, size_t size, unsigned int iterations, int minPopCount, int maxPopCount, int threadCount, bool printProgress);
 double testThroughputCombinationsLocally(BeltEntity* entities, size_t size, unsigned int iterations, int threadCount, bool printProgress);

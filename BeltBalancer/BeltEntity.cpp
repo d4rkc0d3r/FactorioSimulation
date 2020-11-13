@@ -649,7 +649,7 @@ int updateOnCPU(BeltEntity* entities, size_t size, unsigned int iterations)
 
 int updateOnCPUSorted(BeltEntity* entities, size_t size, unsigned int iterations, double throughputThresholdToFinish)
 {
-	int iterationCount = 0;
+	unsigned int iterationCount = 0;
 	int spawnBeltLastIndex = 0;
 	int voidBeltLastIndex = 0;
 	int beltLastIndex = 0;
@@ -699,7 +699,7 @@ int updateOnCPUSorted(BeltEntity* entities, size_t size, unsigned int iterations
 			b->subtractFromBuffer = next->addToBuffer;
 		}
 
-		for (int i = beltLastIndex + 1; i < size; i+=2)
+		for (size_t i = beltLastIndex + 1; i < size; i+=2)
 		{
 			BeltEntity* b = entities + i;
 			BeltEntity* r = entities + i + 1;
@@ -784,7 +784,7 @@ int updateOnCPU(BeltEntity* entities, size_t size, unsigned int iterations, doub
 	vector<BeltEntity*> spawnBelts;
 	vector<BeltEntity*> voidBelts;
 
-	int iterationCount = 0;
+	unsigned int iterationCount = 0;
 
 	for (unsigned int i = 0; i < size; i++)
 	{

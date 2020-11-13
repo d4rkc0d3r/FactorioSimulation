@@ -38,7 +38,6 @@ void printAndMoveCursorBack(string str)
 
 #endif
 
-bool useCPU = true;
 bool printProgress = true;
 bool adaptiveIterationCount = true;
 bool isSorted = true;
@@ -46,12 +45,10 @@ bool testInputBalance = true;
 bool testOuputBalance = true;
 bool testFullLoadThroughput = true;
 bool testAllTwoBeltThroughputCombinations = false;
-bool testAllThroughputCombinationsGPU = false;
 bool testAllThroughputCombinationsCPU = false;
 bool testRandomThroughputCombinations = false;
 bool testLocalThroughputCombinations = false;
-int threads = 256;
-int cpuThreads = 1;
+int cpuThreads = 4;
 
 int minIterations = 1 << 30;
 int maxIterations = 0;
@@ -494,39 +491,33 @@ void sortEntities(BeltEntity* entities, size_t size)
 
 void printHelp()
 {
-	cout << "beltbalancer.exe [-f=YOUR_BALANCER_FILE.txt] ([-cpu]|[-gpu]|[-cudadev=N]) [-t2]" << endl;
-	cout << "                 [-tall(cpu[N]|gpu)] [-trandom[N]] [-i=N] [-benchmark] [-time]" << endl;
-	cout << "                 [-s] [-a]" << endl;
+	cout << "beltbalancer.exe [-f=YOUR_BALANCER_FILE.txt] [-s] [-time]" << endl;
+	cout << "                 [-tall[N]] [-tlocal] [-trandom[N]] [-t2] " << endl;
 	cout << "             " << endl;
-	cout << "  -f=FILE    loads the blueprint string file FILE, if not found tries again" << endl;
-	cout << "             with %APPDATA%\\factorio\\script-output\\blueprint-string\\FILE" << endl;
+	cout << "  -f=FILE    loads the blueprint string file FILE" << endl;
 	cout << "             if not specified, it loads the string from clipboard" << endl;
-	cout << "  -t2        tests all throughput combinations where exactly two inputs and" << endl;
-	cout << "             outputs are used" << endl;
 	cout << "  -tall      tests all throughput combinations where more or equal to two" << endl;
 	cout << "             inputs and outputs are used. N specifies how many threads will" << endl;
-	cout << "             be launched and is 1 by default" << endl;
+	cout << "             be launched and is 4 by default" << endl;
+	cout << "             don't use this for large balancers (> 16 in/out belts)" << endl;
+	cout << "  -tlocal    tests all local throughput combinations. local combinations means" << endl;
+	cout << "             only one block of adjacent belts will be unblocked" << endl;
+	cout << "             this is designed for large balancers (> 16 in/out belts)" << endl;
 	cout << "  -trandom   tests random throughput combinations. N specifies how many threads" << endl;
-	cout << "             will be launched and is 1 by default" << endl;
-	cout << "  -i=N       specifies the number of iterations the simulation should run" << endl;
-	cout << "             default is 2 * (2 * nSplitter + nInputs + nOutputs + 1) or 5" << endl;
-	cout << "             if -a is also selected" << endl;
+	cout << "             will be launched and is 4 by default" << endl;
+	cout << "             this is designed for large balancers (> 16 in/out belts)" << endl;
+	cout << "  -t2        tests all throughput combinations where exactly two inputs and" << endl;
+	cout << "             outputs are used" << endl;
 	cout << "  -time      times the complete testing time needed excluding loading and" << endl;
 	cout << "             parsing the blueprint file" << endl;
 	cout << "  -s         does suppress the ongoing progress display" << endl;
 	cout << "             useful if you pipe the output to a file" << endl;
-	cout << "  -a         does run the simulation until it converges instead of running" << endl;
-	cout << "             it for a fixed amount of steps. Massive speed gains but does" << endl;
-	cout << "             not converge for a minority of blueprints" << endl;
-	cout << "  -benchmark times only the simulation time needed to run the specified amount" << endl;
-	cout << "             of iterations" << endl;
 }
 
 int main(int argc, char** argv)
 {
 	int iterations = -1;
 	string file = "CLIPBOARD";
-	int cudaDeviceId = -1;
 	bool doBenchmark = false;
 	bool timeIt = false;
 	bool optimize = true;
@@ -584,34 +575,9 @@ int main(int argc, char** argv)
 				cpuThreads = stoi(arg.substr(7));
 			}
 		}
-		else if (arg.compare("-tallgpu") == 0)
-		{
-			testAllThroughputCombinationsGPU = true;
-		}
 		else if (arg.compare("-time") == 0)
 		{
 			timeIt = true;
-		}
-		else if (arg.compare("-cpu") == 0)
-		{
-			useCPU = true;
-		}
-		else if (arg.compare("-gpu") == 0)
-		{
-			useCPU = false;
-			if (cudaDeviceId == -1)
-			{
-				cudaDeviceId = 0;
-			}
-		}
-		else if (arg.compare(0, 9, "-threads=") == 0)
-		{
-			threads = stoi(arg.substr(9));
-			useCPU = false;
-		}
-		else if (arg.compare(0, 9, "-cudadev=") == 0)
-		{
-			cudaDeviceId = stoi(arg.substr(9));
 		}
 		else if (arg.compare(0, 3, "-i=") == 0)
 		{
