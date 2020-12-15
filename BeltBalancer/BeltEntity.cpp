@@ -166,22 +166,16 @@ bool checkCorrectlyOrderedSplitterCombinations(int c, const vector<int>& mergedI
 {
 	for (size_t i = 0; i < mergedIds.size(); i++)
 	{
-		if (((c >> i) & 1) == 0 || mergedIds[i] == -1)
+		if (mergedIds[i] == -1)
 		{
 			continue;
 		}
-		if (((c >> mergedIds[i]) & 1) == 0)
+		if (((c >> i) ^ (c >> mergedIds[i])) & 1)
 		{
 			return false;
 		}
 	}
 	return true;
-}
-
-void doNothing(BeltEntity* source, size_t size, unsigned int iterations, vector<int>& inputIds, long long* progress)
-{
-	*progress = 99999999;
-	return;
 }
 
 double testThroughputCombinationsOnCPU(BeltEntity* entities, size_t size, unsigned int iterations, int minPopCount, int maxPopCount, int threadCount, bool printProgress)
