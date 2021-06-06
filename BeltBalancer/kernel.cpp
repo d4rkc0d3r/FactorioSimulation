@@ -318,6 +318,8 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 		}
 	}
 
+	double minThroughput = 100;
+
 	if (testFullLoadThroughput)
 	{
 		memcpy(workingCopy, entities, size * sizeof(BeltEntity));
@@ -352,7 +354,9 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 
 		double throughputPercentage = (round(actualOutput / min(maxInput, maxOutput) * 1000)) / 10.0;
 
-		cout << "Throughput under full load: " << throughputPercentage << "%" << endl;
+		minThroughput = throughputPercentage;
+
+		cout << "Throughput under full load: " << minThroughput << "%" << endl;
 
 		float inBalance = (round(minSpawn / maxSpawn * 1000)) / 10.0f;
 		float outBalance = (round(minVoid / maxVoid * 1000)) / 10.0f;
@@ -362,6 +366,8 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 
 	if (testAllTwoBeltThroughputCombinations)
 	{
+		double currentMinThroughput = 100;
+
 		BeltEntity* allBlocked = new BeltEntity[size];
 		memcpy(allBlocked, entities, size * sizeof(BeltEntity));
 		for (unsigned int i = 0; i < spawnBelts.size(); i++)
@@ -372,8 +378,6 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 		{
 			allBlocked[voidBelts[i].id].voidAmount = 0;
 		}
-
-		double minThroughput = 100;
 		int tested = 0;
 		double lastProgress = -1;
 		int toTest = ((spawnBelts.size() - 1) * (spawnBelts.size()) / 2) * ((voidBelts.size() - 1) * (voidBelts.size()) / 2);
@@ -388,7 +392,7 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 					if (progress != lastProgress)
 					{
 						stringstream ss;
-						ss << "Min Throughput: " << minThroughput << "%  Progress: " << progress << ((progress - ((int)progress) == 0) ? ".0%   " : "%   ");
+						ss << "Min Throughput: " << currentMinThroughput << "%  Progress: " << progress << ((progress - ((int)progress) == 0) ? ".0%   " : "%   ");
 						printAndMoveCursorBack(ss.str());
 						lastProgress = progress;
 					}
@@ -419,19 +423,20 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 
 				double throughputPercentage = (round(actualOutput / maxOutput * 1000)) / 10.0;
 
-				if (throughputPercentage < minThroughput)
-				{
-					minThroughput = throughputPercentage;
-				}
+				currentMinThroughput = min(currentMinThroughput, throughputPercentage);
 			}
 		}
+
+		minThroughput = min(currentMinThroughput, minThroughput);
 
 		cout << "Min Throughput with two belts: " << minThroughput << ((printProgress) ? "%                          " : "%") << endl;
 	}
 
 	if (testLocalThroughputCombinations)
 	{
-		double minThroughput = round(testThroughputCombinationsLocally(entities, size, iterations, cpuThreads, printProgress) * 1000) / 10;
+		double throughputPercentage = round(testThroughputCombinationsLocally(entities, size, iterations, cpuThreads, printProgress) * 1000) / 10;
+
+		minThroughput = min(minThroughput, throughputPercentage);
 
 		cout << "Min Throughput with local combinations: " << minThroughput << "%" << endl;
 	}
@@ -446,7 +451,9 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 		{
 			int minPopCount = (spawnBelts.size() + voidBelts.size() <= 16) ? 1 : 2;
 			int maxPopCount = (int)ceil(0.5 * max(spawnBelts.size(), voidBelts.size()));
-			double minThroughput = round(testThroughputCombinationsOnCPU(entities, size, iterations, minPopCount, maxPopCount, cpuThreads, printProgress) * 1000) / 10;
+			double throughputPercentage = round(testThroughputCombinationsOnCPU(entities, size, iterations, minPopCount, maxPopCount, cpuThreads, printProgress) * 1000) / 10;
+
+			minThroughput = min(minThroughput, throughputPercentage);
 
 			cout << "Min Throughput with all combinations: " << minThroughput << "%" << endl;
 		}
