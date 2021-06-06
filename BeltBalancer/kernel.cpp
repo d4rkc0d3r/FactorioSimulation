@@ -450,7 +450,7 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 		else
 		{
 			int minPopCount = (spawnBelts.size() + voidBelts.size() <= 16) ? 1 : 2;
-			int maxPopCount = (int)ceil(0.5 * max(spawnBelts.size(), voidBelts.size()));
+			int maxPopCount = (int)ceil(0.666 * max(spawnBelts.size(), voidBelts.size()));
 			double throughputPercentage = round(testThroughputCombinationsOnCPU(entities, size, iterations, minPopCount, maxPopCount, cpuThreads, printProgress) * 1000) / 10;
 
 			minThroughput = min(minThroughput, throughputPercentage);
