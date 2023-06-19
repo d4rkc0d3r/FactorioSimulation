@@ -382,10 +382,13 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 		double lastProgress = -1;
 		int toTest = ((spawnBelts.size() - 1) * (spawnBelts.size()) / 2) * ((voidBelts.size() - 1) * (voidBelts.size()) / 2);
 
+		size_t total = 0;
 		for (unsigned int i1 = 0; i1 < spawnBelts.size() - 1; i1++) for (unsigned int i2 = i1 + 1; i2 < spawnBelts.size(); i2++)
 		{
 			for (unsigned int o1 = 0; o1 < voidBelts.size() - 1; o1++) for (unsigned int o2 = o1 + 1; o2 < voidBelts.size(); o2++)
 			{
+				printProgress = false;
+				total += 1;
 				if (printProgress)
 				{
 					double progress = ((int)((tested++ / (double)toTest) * 1000)) / 10.0;
@@ -423,12 +426,27 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 
 				double throughputPercentage = (round(actualOutput / maxOutput * 1000)) / 10.0;
 
+				if( throughputPercentage < 100.0 )
+				{
+					std::string inp_text(spawnBelts.size(), '0');
+					inp_text[i1] = '1';
+					inp_text[i2] = '1';
+
+					std::string out_text(voidBelts.size(), '0');
+					out_text[o1] = '1';
+					out_text[o2] = '1';
+
+					cout << "Inp: " << inp_text << " Out: " << out_text << " =  " << throughputPercentage << " %" << endl;
+				}
+
+
 				currentMinThroughput = min(currentMinThroughput, throughputPercentage);
 			}
 		}
 
 		minThroughput = min(currentMinThroughput, minThroughput);
 
+		cout << "Total: " << total << endl;
 		cout << "Min Throughput with two belts: " << minThroughput << ((printProgress) ? "%                          " : "%") << endl;
 	}
 
