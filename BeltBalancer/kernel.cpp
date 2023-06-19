@@ -427,17 +427,17 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 				double throughputPercentage = (round(actualOutput / maxOutput * 1000)) / 10.0;
 
 				if( throughputPercentage < 100.0 )
-                {
-                    std::string inp_text(spawnBelts.size(), '0');
-                    inp_text[i1] = '1';
-                    inp_text[i2] = '1';
+				{
+					std::string inp_text(spawnBelts.size(), '0');
+					inp_text[i1] = '1';
+					inp_text[i2] = '1';
 
-                    std::string out_text(voidBelts.size(), '0');
-                    out_text[o1] = '1';
-                    out_text[o2] = '1';
+					std::string out_text(voidBelts.size(), '0');
+					out_text[o1] = '1';
+					out_text[o2] = '1';
 
-                    cout << "Inp: " << inp_text << " Out: " << out_text << " =  " << throughputPercentage << " %" << endl;
-                }
+					cout << "Inp: " << inp_text << " Out: " << out_text << " =  " << throughputPercentage << " %" << endl;
+				}
 
 
 				currentMinThroughput = min(currentMinThroughput, throughputPercentage);

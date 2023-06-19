@@ -89,24 +89,24 @@ void testThroughput(BeltEntity* source, size_t size, unsigned int iterations, ve
 		}
 
 		double throughputPercentage = (round(actualOutput / maxOutput * 1000)) / 10.0;
-        if( throughputPercentage < 100.0 )
-        {
-            std::string out_text = "";
-            out_text += "Inp:";
-            for (unsigned int i = 0; i < inputIds.size(); i++)
-            {
-                 //out_text += "." + to_string(inputIds[i]);
-                 out_text += to_string(int(inputData[inputOffset + i]));
-            }
-            out_text += " Out:"; //<< o1 << o2
-            for (unsigned int i = 0; i < outputIds.size(); i++)
-            {
-                //out_text += "." + to_string(outputIds[i]);
-                out_text += to_string(int(outputData[outputOffset + i]));
-            }
-            out_text +=  " =  " + to_string(throughputPercentage) + " %" + "\r\n";
-            cout << out_text;
-        }
+		if( throughputPercentage < 100.0 )
+		{
+			std::string out_text = "";
+			out_text += "Inp:";
+			for (unsigned int i = 0; i < inputIds.size(); i++)
+			{
+				//out_text += "." + to_string(inputIds[i]);
+				out_text += to_string(int(inputData[inputOffset + i]));
+			}
+			out_text += " Out:"; //<< o1 << o2
+			for (unsigned int i = 0; i < outputIds.size(); i++)
+			{
+				//out_text += "." + to_string(outputIds[i]);
+				out_text += to_string(int(outputData[outputOffset + i]));
+			}
+			out_text +=  " =  " + to_string(throughputPercentage) + " %" + "\r\n";
+			cout << out_text;
+		}
 
 		*results = MIN(actualOutput / maxOutput, *results);
 		++*progress;
