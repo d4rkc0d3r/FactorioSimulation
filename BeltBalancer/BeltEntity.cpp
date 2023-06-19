@@ -88,6 +88,26 @@ void testThroughput(BeltEntity* source, size_t size, unsigned int iterations, ve
 			actualOutput += entities[outputIds[i]].lastThroughput;
 		}
 
+		double throughputPercentage = (round(actualOutput / maxOutput * 1000)) / 10.0;
+        if( throughputPercentage < 100.0 )
+        {
+            std::string out_text = "";
+            out_text += "Inp:";
+            for (unsigned int i = 0; i < inputIds.size(); i++)
+            {
+                 //out_text += "." + to_string(inputIds[i]);
+                 out_text += to_string(int(inputData[inputOffset + i]));
+            }
+            out_text += " Out:"; //<< o1 << o2
+            for (unsigned int i = 0; i < outputIds.size(); i++)
+            {
+                //out_text += "." + to_string(outputIds[i]);
+                out_text += to_string(int(outputData[outputOffset + i]));
+            }
+            out_text +=  " =  " + to_string(throughputPercentage) + " %" + "\r\n";
+            cout << out_text;
+        }
+
 		*results = MIN(actualOutput / maxOutput, *results);
 		++*progress;
 	}
@@ -325,6 +345,7 @@ double testThroughputCombinationsOnCPU(BeltEntity* entities, size_t size, unsign
 		threads[i] = new thread(testThroughput, entities, size, iterations, &inputIds, &outputIds, startIndex, endIndex, &inputCombinations, &outputCombinations, &result[i], &progress[i]);
 	}
 
+	printProgress = false;
 	if (printProgress)
 	{
 		clock_t start;
