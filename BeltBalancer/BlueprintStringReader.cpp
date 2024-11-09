@@ -92,7 +92,7 @@ std::string decompress_string(const std::string& str)
 	char outbuffer[32768];
 	std::string outstring;
 
-	// get the decompressed bytes blockwise using repeated calls to inflate
+	// get the decompressed bytes block wise using repeated calls to inflate
 	do {
 		zs.next_out = reinterpret_cast<Bytef*>(outbuffer);
 		zs.avail_out = sizeof(outbuffer);
@@ -148,6 +148,8 @@ vector<BPEntity> parseVanillaJSON(string jsonString)
 
 	vector<JSONObject*>* entities = json->GetPath("blueprint.entities")->GetArray();
 
+	int splittersWithPriority = 0;
+
 	for (size_t i = 0; i < entities->size(); i++)
 	{
 		JSONObject* j = entities->at(i);
@@ -165,7 +167,14 @@ vector<BPEntity> parseVanillaJSON(string jsonString)
 			e.direction /= 2;
 		e.x = j->Get("position")->GetNumber("x");
 		e.y = j->Get("position")->GetNumber("y");
+		splittersWithPriority += j->Get("input_priority") != nullptr || j->Get("output_priority") != nullptr ? 1 : 0;
 		out.push_back(e);
+	}
+
+	if (splittersWithPriority > 0)
+	{
+		cout << "Warning: This blueprint contains " << splittersWithPriority << " splitters with priority settings." << endl;
+		cout << "This tool does not support priority settings and will treat them as regular splitters." << endl;
 	}
 
 	delete json;

@@ -5,5 +5,21 @@
         "xstring": "cpp",
         "ostream": "cpp",
         "vector": "cpp"
-    }
+    },
+    "cSpell.words": [
+        "beltbalancer",
+        "ldemand",
+        "lsplitter",
+        "lsupply",
+        "outbuffer",
+        "outstring",
+        "rdemand",
+        "rnext",
+        "rsplitter",
+        "rsupply",
+        "tallcpu",
+        "tlocal",
+        "trandom",
+        "uncomp"
+    ]
 }

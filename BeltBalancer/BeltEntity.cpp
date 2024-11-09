@@ -471,7 +471,7 @@ double testThroughputCombinationsLocally(BeltEntity* entities, size_t size, unsi
 				double progPercent = prog / (double)testCases;
 				double p = floor(progPercent * 1000) / 10;
 				stringstream ss;
-				ss << beltCount << "/" << maxBelts << " | subprogress: " << p << ((p - ((int)p) == 0) ? ".0%" : "%") << ((p < 10) ? "  " : " ");
+				ss << beltCount << "/" << maxBelts << " | sub progress: " << p << ((p - ((int)p) == 0) ? ".0%" : "%") << ((p < 10) ? "  " : " ");
 				ss << " | min throughput: " << (round(minimum * 1000) / 10) << "%                ";
 				printAndMoveCursorBack(ss.str());
 			}
