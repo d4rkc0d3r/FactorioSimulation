@@ -1,0 +1,22 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "build",
+        "command": "msbuild",
+        "type": "shell",
+        "args": [
+          "BeltBalancer/BeltBalancer.vcxproj",
+          "/property:GenerateFullPaths=true",
+          "/t:build",
+          "/p:Configuration=Release",
+          "/p:Platform=Win32"
+        ],
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        },
+        "problemMatcher": ["$msCompile"]
+      }
+    ]
+  }

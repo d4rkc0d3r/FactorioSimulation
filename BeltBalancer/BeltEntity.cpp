@@ -666,7 +666,7 @@ int updateOnCPUSorted(BeltEntity* entities, size_t size, unsigned int iterations
 		}
 	}
 
-	double troughputDifference = spawnBeltLastIndex;
+	double throughputDifference = spawnBeltLastIndex;
 
 	do
 	{
@@ -758,17 +758,17 @@ int updateOnCPUSorted(BeltEntity* entities, size_t size, unsigned int iterations
 		}
 
 		iterationCount += 1;
-		troughputDifference = 0;
+		throughputDifference = 0;
 
 		for (int i = 1; i <= spawnBeltLastIndex; i++)
 		{
-			troughputDifference += entities[i].lastThroughput;
+			throughputDifference += entities[i].lastThroughput;
 		}
 		for (int i = spawnBeltLastIndex + 1; i <= voidBeltLastIndex; i++)
 		{
-			troughputDifference -= entities[i].lastThroughput;
+			throughputDifference -= entities[i].lastThroughput;
 		}
-	} while (abs(troughputDifference) > throughputThresholdToFinish && iterationCount < iterations);
+	} while (abs(throughputDifference) > throughputThresholdToFinish && iterationCount < iterations);
 
 	return iterationCount;
 }
@@ -792,25 +792,25 @@ int updateOnCPU(BeltEntity* entities, size_t size, unsigned int iterations, doub
 		}
 	}
 
-	double troughputDifference = spawnBelts.size();
+	double throughputDifference = spawnBelts.size();
 
 	do
 	{
 		updateOnCPU(entities, size, 1);
 
 		iterationCount += 1;
-		troughputDifference = 0;
+		throughputDifference = 0;
 
 		for (unsigned int i = 0; i < spawnBelts.size(); i++)
 		{
-			troughputDifference += spawnBelts[i]->lastThroughput;
+			throughputDifference += spawnBelts[i]->lastThroughput;
 		}
 		for (unsigned int i = 0; i < voidBelts.size(); i++)
 		{
-			troughputDifference -= voidBelts[i]->lastThroughput;
+			throughputDifference -= voidBelts[i]->lastThroughput;
 		}
 	}
-	while (abs(troughputDifference) > throughputThresholdToFinish && iterationCount < iterations);
+	while (abs(throughputDifference) > throughputThresholdToFinish && iterationCount < iterations);
 
 	return iterationCount;
 }

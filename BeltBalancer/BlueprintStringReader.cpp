@@ -135,6 +135,17 @@ vector<BPEntity> parseVanillaJSON(string jsonString)
 #ifdef _DEBUG
 	cout << json->ToString(2) << endl;
 #endif // _DEBUG
+
+	JSONObject* blueprint = json->Get("blueprint");
+	double version = blueprint->GetNumber("version");
+	bool isFactorioV2 = version >= 562949954273281.0;
+
+#ifdef _DEBUG
+	cout << "Factorio version: " << (long long)version << endl;
+	cout << "Is 2.0: " << (isFactorioV2 ? "true" : "false") << endl;
+	cout << "Label: " << blueprint->GetString("label") << endl;
+#endif // _DEBUG
+
 	vector<JSONObject*>* entities = json->GetPath("blueprint.entities")->GetArray();
 
 	for (size_t i = 0; i < entities->size(); i++)
@@ -148,6 +159,10 @@ vector<BPEntity> parseVanillaJSON(string jsonString)
 		}
 		e.name = j->GetString("name") + type;
 		e.direction = (j->Get("direction") != nullptr) ? (int)j->GetNumber("direction") : 0;
+		// factorio version 2.0 has extra 22.5° direction steps
+		// if we simply divide by 2 we get the old 45° steps and everything down the line still works the same
+		if (isFactorioV2)
+			e.direction /= 2;
 		e.x = j->Get("position")->GetNumber("x");
 		e.y = j->Get("position")->GetNumber("y");
 		out.push_back(e);
@@ -268,7 +283,7 @@ void displayMap(int** map, int width, int height)
 
 BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool optimize)
 {
-	const int maxUndergroundDistance = 8;
+	const int maxUndergroundDistance = 10;
 
 	vector<BeltEntity> output;
 
@@ -450,18 +465,22 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 		b.type = TYPE_BELT;
 		b.otherSplitterPart = -1;
 		b.next = -1;
-		b.maxThroughput = 1.0f / 3;
+		b.maxThroughput = 1.0f;
 		b.buffer = 0;
 		b.addToBuffer = 0;
 		b.subtractFromBuffer = 0;
 
 		if (e.name.find("fast") != string::npos)
 		{
-			b.maxThroughput = 2.0f / 3;
+			b.maxThroughput = 2.0f;
 		}
 		else if (e.name.find("express") != string::npos)
 		{
-			b.maxThroughput = 1.0f;
+			b.maxThroughput = 3.0f;
+		}
+		else if (e.name.find("turbo") != string::npos)
+		{
+			b.maxThroughput = 4.0f;
 		}
 
 		beltIdMap[(int)round(e.x)][(int)round(e.y)] = i;
@@ -528,7 +547,9 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 
 		if (b.type == TYPE_UNDERGROUND_ENTRANCE)
 		{
-			for (int i = 1; i <= maxUndergroundDistance + 1; i++)
+			// max throughput is 1,2,3,4 for the different belt tiers
+			// and the underground belt distance is 4,6,8,10 respectively
+			for (int i = 1; i <= (int)b.maxThroughput * 2 + 2 + 1; i++)
 			{
 				int id = beltIdMap[x + dx * i][y + dy * i];
 				if (id == -1 || output[id].type != TYPE_UNDERGROUND_EXIT || b.maxThroughput != output[id].maxThroughput)
@@ -542,6 +563,11 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 					break;
 				}
 			}
+			if (b.next == -1)
+			{
+				cerr << "[Error] Did not find matching underground belt exit for " << e.name << " at (" << e.x << "," << e.y << ")" << endl;
+				return nullptr;
+			}
 		}
 		else
 		{
@@ -551,7 +577,7 @@ BeltEntity* parseBlueprintString(string blueprint, size_t* outputSize, bool opti
 				int nd = listWithDualSplitter[b.next].direction;
 				if ((8 + nd - e.direction) % 4 == 2)
 				{
-					cerr << "[Error] Detected sideload on underground belt" << endl;
+					cerr << "[Error] Detected side load on underground belt" << endl;
 					// side loading on underground belt exit is bad!
 					return nullptr;
 				}

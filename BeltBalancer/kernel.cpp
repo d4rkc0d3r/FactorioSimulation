@@ -224,7 +224,9 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 				}
 			}
 
-			if (workingCopy[spawnBelts[i].id].lastThroughput - workingCopy[spawnBelts[i].id].maxThroughput < -0.001)
+			double current = workingCopy[spawnBelts[i].id].lastThroughput;
+			double max = workingCopy[spawnBelts[i].id].maxThroughput;
+			if (current / max < 0.998)
 			{
 				ThroughputLimitedInputs++;
 			}
@@ -238,7 +240,7 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 		cout << "Output balance: " << passedInputs << "/" << spawnBelts.size();
 		if (ThroughputLimitedInputs > 0)
 		{
-			cout << "  (" << ThroughputLimitedInputs << " input" << ((ThroughputLimitedInputs == 1) ? " is" : "s are") << " Throughput limited)" << endl;
+			cout << "  (" << ThroughputLimitedInputs << " input" << ((ThroughputLimitedInputs == 1) ? " is" : "s are") << " throughput limited)" << endl;
 		}
 		else if (printProgress)
 		{
@@ -292,7 +294,9 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 				}
 			}
 
-			if (workingCopy[voidBelts[i].id].lastThroughput - workingCopy[voidBelts[i].id].maxThroughput < -0.001)
+			double current = workingCopy[voidBelts[i].id].lastThroughput;
+			double max = workingCopy[voidBelts[i].id].maxThroughput;
+			if (current / max < 0.998)
 			{
 				ThroughputLimitedOutputs++;
 			}
@@ -306,7 +310,7 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 		cout << "Input balance: " << passedOutputs << "/" << voidBelts.size();
 		if (ThroughputLimitedOutputs > 0)
 		{
-			cout << "   (" << ThroughputLimitedOutputs << " output" << ((ThroughputLimitedOutputs == 1) ? " is" : "s are") << " Throughput limited)" << endl;
+			cout << "   (" << ThroughputLimitedOutputs << " output" << ((ThroughputLimitedOutputs == 1) ? " is" : "s are") << " throughput limited)" << endl;
 		}
 		else if (printProgress)
 		{
@@ -361,7 +365,7 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 		float inBalance = (round(minSpawn / maxSpawn * 1000)) / 10.0f;
 		float outBalance = (round(minVoid / maxVoid * 1000)) / 10.0f;
 
-		cout << "In/Out Balance under full load: " << inBalance << "% | " << outBalance << "%" << endl;
+		cout << "In/Out balance under full load: " << inBalance << "% | " << outBalance << "%" << endl;
 	}
 
 	if (testAllTwoBeltThroughputCombinations)
@@ -392,7 +396,7 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 					if (progress != lastProgress)
 					{
 						stringstream ss;
-						ss << "Min Throughput: " << currentMinThroughput << "%  Progress: " << progress << ((progress - ((int)progress) == 0) ? ".0%   " : "%   ");
+						ss << "Min throughput: " << currentMinThroughput << "%  Progress: " << progress << ((progress - ((int)progress) == 0) ? ".0%   " : "%   ");
 						printAndMoveCursorBack(ss.str());
 						lastProgress = progress;
 					}
@@ -429,7 +433,7 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 
 		minThroughput = min(currentMinThroughput, minThroughput);
 
-		cout << "Min Throughput with two belts: " << minThroughput << ((printProgress) ? "%                          " : "%") << endl;
+		cout << "Min throughput with two belts: " << minThroughput << ((printProgress) ? "%                          " : "%") << endl;
 	}
 
 	if (testLocalThroughputCombinations)
@@ -438,7 +442,7 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 
 		minThroughput = min(minThroughput, throughputPercentage);
 
-		cout << "Min Throughput with local combinations: " << minThroughput << "%" << endl;
+		cout << "Min throughput with local combinations: " << minThroughput << "%" << endl;
 	}
 
 	if (testAllThroughputCombinationsCPU)
@@ -455,7 +459,7 @@ void testBalance(BeltEntity* entities, size_t size, int iterations)
 
 			minThroughput = min(minThroughput, throughputPercentage);
 
-			cout << "Min Throughput with all combinations: " << minThroughput << "%" << endl;
+			cout << "Min throughput with all combinations: " << minThroughput << "%" << endl;
 		}
 	}
 
