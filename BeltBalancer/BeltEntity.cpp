@@ -709,45 +709,23 @@ int updateOnCPUSorted(BeltEntity* entities, size_t size, unsigned int iterations
 			float supply = lsupply + rsupply;
 			if (demand >= supply)
 			{
-				float halfSupply = supply / 2;
 				b->subtractFromBuffer = lsupply;
 				r->subtractFromBuffer = rsupply;
-				if (ldemand < halfSupply)
-				{
-					lnext->addToBuffer = ldemand;
-					rnext->addToBuffer = supply - ldemand;
-				}
-				else if (rdemand < halfSupply)
-				{
-					rnext->addToBuffer = rdemand;
-					lnext->addToBuffer = supply - rdemand;
-				}
-				else
-				{
-					lnext->addToBuffer = halfSupply;
-					rnext->addToBuffer = halfSupply;
-				}
+				float pushLeft = minss(ldemand, supply / 2);
+				float pushRight = minss(rdemand, supply - pushLeft);
+				pushLeft = supply - pushRight;
+				lnext->addToBuffer = pushLeft;
+				rnext->addToBuffer = pushRight;
 			}
 			else
 			{
-				float halfDemand = demand / 2;
 				lnext->addToBuffer = ldemand;
 				rnext->addToBuffer = rdemand;
-				if (lsupply < halfDemand)
-				{
-					b->subtractFromBuffer = lsupply;
-					r->subtractFromBuffer = demand - lsupply;
-				}
-				else if (rsupply < halfDemand)
-				{
-					r->subtractFromBuffer = rsupply;
-					b->subtractFromBuffer = demand - rsupply;
-				}
-				else
-				{
-					r->subtractFromBuffer = halfDemand;
-					b->subtractFromBuffer = halfDemand;
-				}
+				float subLeft = minss(lsupply, demand / 2);
+				float subRight = minss(rsupply, demand - subLeft);
+				subLeft = demand - subRight;
+				b->subtractFromBuffer = subLeft;
+				r->subtractFromBuffer = subRight;
 			}
 		}
 
